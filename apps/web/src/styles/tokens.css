@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Surface & Backgrounds */
+  --color-bg-base: #F8F6F0;       /* Warm kirana-store off-white */
+  --color-bg-surface: #FFFFFF;    /* Crisp card white */
+  --color-bg-subtle: #F1EDE4;     /* Elevated subtle beige/grey */
+
+  /* Text */
+  --color-text-main: #1C1917;     /* Deep charcoal warm black */
+  --color-text-muted: #666058;    /* Readable neutral slate */
+  --color-text-inverse: #FFFFFF;
+
+  /* Accent (Used strictly for primary actions) */
+  --color-accent: #0F3876;        /* Deep merchant blue */
+  --color-accent-hover: #0A2652;
+  --color-accent-subtle: #E8EEF8;
+
+  /* Borders */
+  --color-border: #E5DFC9;
+  --color-border-strong: #CDC6AB;
+
+  /* Status Colors */
+  --color-status-success: #15803D; /* Forest Green */
+  --color-status-warning: #B45309; /* Warm Amber */
+  --color-status-error: #B91C1C;   /* Crimson Red */
+  --color-status-info: #0284C7;    /* Slate Blue */
+}
+
+body {
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular figures for strict price alignment (Spec 10.1) */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 48px minimum touch targets on mobile (Spec 10.3) */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}

@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  phone       String    @unique
+  role        String    // 'retailer' | 'desk'
+  retailerId  String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  retailer    Retailer? @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  sessions    Session[]
+  orders      Order[]
+
+  @@index([phone])
+  @@map("users")
+}
+
+model Session {
+  id          String    @id @default(uuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Retailer {
+  id               String     @id @default(uuid())
+  code             String     @unique
+  name             String
+  creditLimitPaise BigInt     @default(0)
+  active           Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  users            User[]
+  prices           Price[]
+  schemes          Scheme[]
+  orders           Order[]
+  aiDrafts         AiDraft[]
+  aliases          Alias[]
+
+  @@map("retailers")
+}
+
+model Sku {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  brand       String
+  imageUrl    String?
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  stock       Stock?
+  prices      Price[]
+  schemes     Scheme[]
+  orderLines  OrderLine[]
+  aliases     Alias[]
+
+  @@map("skus")
+}
+
+model Price {
+  id            String    @id @default(uuid())
+  skuId         String
+  retailerId    String?
+  pricePaise    BigInt
+  gstInclusive  Boolean   @default(true)
+  validFrom     DateTime
+  validTo       DateTime
+  createdAt     DateTime  @default(now())
+
+  sku           Sku       @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  retailer      Retailer? @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+
+  @@index([skuId, retailerId, validFrom])
+  @@map("prices")
+}
+
+model Stock {
+  skuId        String   @id
+  onHandCases  Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  sku          Sku      @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+  @@map("stock")
+}
+
+model Scheme {
+  id          String    @id @default(uuid())
+  skuId       String
+  type        String    // 'buy_n_get_m' | 'slab'
+  n           Int?
+  m           Int?
+  minCases    Int?
+  discountBps Int?      // basis points e.g. 300 = 3%
+  retailerId  String?
+  validFrom   DateTime
+  validTo     DateTime
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  sku         Sku       @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  retailer    Retailer? @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+
+  @@index([skuId, active])
+  @@map("schemes")
+}
+
+model Order {
+  id               String       @id @default(uuid())
+  orderNumber      String       @unique
+  retailerId       String
+  placedByUserId   String
+  status           String       // 'payment_pending', 'payment_failed', 'pending_desk', 'on_hold', 'approved', 'exported', 'rejected', 'cancelled'
+  version          Int          @default(1)
+  totalPaise       BigInt
+  holdReason       String?
+  paymentMode      String       // 'credit_account' | 'online_mock'
+  paymentStatus    String       // 'not_required', 'pending', 'succeeded', 'failed'
+  paymentReference String?
+  refundStatus     String       @default("none") // 'none', 'required_mock', 'processed_mock'
+  idempotencyKey   String
+  aiDraftId        String?
+  exportedBatchId  String?
+  placedAt         DateTime     @default(now())
+
+  retailer         Retailer     @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  placedByUser     User         @relation(fields: [placedByUserId], references: [id], onDelete: Restrict)
+  aiDraft          AiDraft?     @relation(fields: [aiDraftId], references: [id], onDelete: Restrict)
+  exportBatch      ExportBatch? @relation(fields: [exportedBatchId], references: [id], onDelete: Restrict)
+  lines            OrderLine[]
+  events           OrderEvent[]
+
+  @@unique([placedByUserId, idempotencyKey])
+  @@index([retailerId, placedAt(sort: Desc)])
+  @@index([status, placedAt])
+  @@map("orders")
+}
+
+model OrderLine {
+  id                String   @id @default(uuid())
+  orderId           String
+  skuId             String
+  billedCases       Int
+  freeCases         Int      @default(0)
+  unitPricePaise    BigInt
+  gstInclusive      Boolean  @default(true)
+  discountPaise     BigInt   @default(0)
+  lineTotalPaise    BigInt
+  schemeExplanation String
+
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sku               Sku      @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, skuId])
+  @@map("order_lines")
+}
+
+model OrderEvent {
+  id          String   @id @default(uuid())
+  orderId     String
+  fromStatus  String
+  toStatus    String
+  actorUserId String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+model AiDraft {
+  id                String   @id @default(uuid())
+  retailerId        String
+  rawMessage        String
+  normalisedMessage String
+  modelResponse     Json?
+  lines             Json     // DraftLine[] with candidates, confidence, alternatives, clarification
+  status            String   // 'draft', 'confirmed', 'manual_entry_required'
+  createdAt         DateTime @default(now())
+
+  retailer          Retailer @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  orders            Order[]
+
+  @@index([retailerId, createdAt(sort: Desc)])
+  @@map("ai_drafts")
+}
+
+model Alias {
+  id               String   @id @default(uuid())
+  retailerId       String
+  phraseNormalised String
+  skuId            String
+  active           Boolean  @default(true)
+  replacedById     String?
+  createdAt        DateTime @default(now())
+
+  retailer         Retailer @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  sku              Sku      @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+  @@index([phraseNormalised])
+  @@map("aliases")
+}
+
+model ExportBatch {
+  id              String   @id @default(uuid())
+  fileSha256      String
+  orderCount      Int
+  totalPaise      BigInt
+  excluded        Json     // List of excluded orders with reasons
+  createdByUserId String
+  createdAt       DateTime @default(now())
+
+  orders          Order[]
+
+  @@map("export_batches")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  channel   String   // 'sms_mock' | 'whatsapp_mock' | 'in_app'
+  template  String   // 'otp_sent', 'order_placed', 'order_on_hold', 'payment_failed', 'order_approved', etc.
+  body      String   // Masked preview
+  status    String   // 'sent', 'failed'
+  attempts  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
