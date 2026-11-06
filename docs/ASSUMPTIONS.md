@@ -19,3 +19,13 @@ Every ambiguity in the brief is resolved here with a label. Items marked **verif
 - **A-08** Out-of-stock lines cannot be placed; the UI offers in-stock pack sizes of the same product, or removal.
 - **A-09** Each retailer has a price tier (`STANDARD`, `PREMIUM`) with per-SKU overrides (`TierPrice`). Missing override → SKU base price.
 - **A-10** A retailer only sees their own prices, credit, orders and messages. The desk sees everything.
+
+## Added during build
+
+- **A-11** Free goods carry no charge and no GST line on the cart. Whether GST applies to free supplies (it may, on deemed value) is for the client's accountant — **verify**. Tally export shows them as actual vs billed quantity.
+- **A-12** MVP orders are in **cases only**. `allowPieces` is stored, but piece ordering is deferred. A captured line in pieces must be changed to cases by the reviewer before it can be confirmed.
+- **A-13** Order statuses: an app order (or a retailer-typed capture) within credit goes to `PENDING_REVIEW` for a quick desk check. An order over credit goes to `CREDIT_HOLD`. A desk-confirmed capture goes straight to `CONFIRMED`, because the desk reviewed it line by line. Releasing a hold → `CONFIRMED`.
+- **A-14** Available credit = limit − outstanding (synced from Tally; seeded here) − value of open orders not yet exported (`PENDING_REVIEW` + `CONFIRMED`). Without this, several small orders could each pass the check and together exceed the limit.
+- **A-15** The brief's exact sample message wasn't included, so it's reconstructed as `Bhaiya 5 peti biscuit 75 wala, 2 carton surf 1 kilo aur 1 dabba chai patti 250 wala bhej dena` (5 biscuit, 2 detergent, 1 tea). SKU codes for the brief's other two items are `SKU-DT-1KG` and `SKU-TE-250`; their stock is 200 and 0.
+- **A-16** Retailers have a free-text `segment` (`URBAN`, `SEMI_URBAN`) that schemes can target.
+- **A-17** Seeded order history uses plain price + GST (no schemes). It only exists for "frequently bought", repeat order and the inactivity dashboard.
