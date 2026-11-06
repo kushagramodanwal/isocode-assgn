@@ -185,7 +185,7 @@ async function main() {
     await db.retailerAlias.create({ data: { retailerId: retailerIds.get(a.retailer)!, phrase: a.phrase, productId: productByCode.get(a.sku)!.id, createdById: deskIds[0]! } });
   }
 
-  const catalogue = PRODUCTS.map((p) => ({ id: productByCode.get(p.code)!.id, name: p.name, nameHi: p.nameHi, brand: p.brand, packLabel: p.packLabel, keywords: p.keywords }));
+  const catalogue = PRODUCTS.map((p) => ({ id: productByCode.get(p.code)!.id, name: p.name, nameHi: p.nameHi, brand: p.brand, packLabel: p.packLabel, keywords: p.keywords, category: p.category }));
   for (const m of INCOMING_MESSAGES) {
     const retailerId = retailerIds.get(m.retailer)!;
     const history = new Map(

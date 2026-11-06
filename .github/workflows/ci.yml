@@ -6,13 +6,13 @@ jobs:
     services:
       postgres:
         image: postgres:17-alpine
-        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: fmcg_test }
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: kirana_test }
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fmcg_test
-      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fmcg_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kirana_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kirana_test
       SESSION_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
       DEMO_MODE: 'true'
       LLM_PROVIDER: none

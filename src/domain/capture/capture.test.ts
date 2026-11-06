@@ -4,7 +4,7 @@ import { parseLine, parseMessage, splitLines } from "./parse";
 import { matchLine, phraseKey, type MatchContext } from "./match";
 import { sizeMatches, tokenSimilarity } from "./text";
 
-const catalogue = PRODUCTS.map((p) => ({ id: p.code, name: p.name, nameHi: p.nameHi, brand: p.brand, packLabel: p.packLabel, keywords: p.keywords }));
+const catalogue = PRODUCTS.map((p) => ({ id: p.code, name: p.name, nameHi: p.nameHi, brand: p.brand, packLabel: p.packLabel, keywords: p.keywords, category: p.category }));
 const ctx = (over: Partial<MatchContext> = {}): MatchContext => ({ catalogue, aliases: new Map(), history: new Map(), ...over });
 
 function capture(message: string, c = ctx()) {
@@ -41,6 +41,11 @@ describe("the brief's sample message", () => {
     expect(lines[0]!.match.alternatives).toHaveLength(2);
     expect(lines[0]!.match.alternatives[0]!.productId).toBe("SKU-BS-200");
     expect(lines[2]!.match.alternatives.map((a) => a.productId)).toContain("SKU-TE-500");
+  });
+
+  it("prefers alternatives from the same category as the match", () => {
+    const alt = lines[0]!.match.alternatives.map((a) => a.productId);
+    expect(alt).toEqual(["SKU-BS-200", "SKU-CB-100"]);
   });
 });
 

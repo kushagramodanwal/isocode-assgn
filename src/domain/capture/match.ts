@@ -11,6 +11,7 @@ export type CatalogueEntry = {
   brand: string;
   packLabel: string;
   keywords: string[];
+  category?: string;
 };
 
 export type MatchContext = {
@@ -118,6 +119,7 @@ export function matchLine(words: string[], sizes: Size[], ctx: MatchContext): Ma
   }
 
   const margin = top.score - (ranked[1]?.score ?? 0);
+  const topCategory = ctx.catalogue.find((p) => p.id === top.productId)?.category;
   const confidence = Math.max(0, Math.round(top.score - Math.max(0, CLEAR_MARGIN - margin) * 1.5));
   const withoutHistory = scoreProduct(words, sizes, ctx.catalogue.find((p) => p.id === top.productId)!, 0);
   const historyDecided = (ctx.history.get(top.productId) ?? 0) > 0 && ranked[1] !== undefined && withoutHistory <= ranked[1].score;
@@ -128,6 +130,17 @@ export function matchLine(words: string[], sizes: Size[], ctx: MatchContext): Ma
     confidence,
     level: confidenceLevel(confidence),
     matchedBy: historyDecided ? "history" : "catalogue",
-    alternatives: ranked.slice(1, 3),
+    alternatives: pickAlternatives(ranked.slice(1), topCategory, ctx),
   };
+}
+
+/**
+ * The next two guesses. Same-category products are preferred: if the best match is a biscuit,
+ * a biscuit the retailer didn't mean is a better second guess than a detergent that shares a word.
+ */
+function pickAlternatives(rest: Candidate[], category: string | undefined, ctx: MatchContext): Candidate[] {
+  if (!category) return rest.slice(0, 2);
+  const cat = new Map(ctx.catalogue.map((p) => [p.id, p.category]));
+  const bonus = (c: Candidate) => (cat.get(c.productId) === category ? 15 : 0);
+  return [...rest].sort((a, b) => b.score + bonus(b) - (a.score + bonus(a))).slice(0, 2);
 }

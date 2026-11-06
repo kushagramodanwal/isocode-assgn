@@ -1,0 +1,18 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Company A Orders",
+    short_name: "Company A",
+    description: "Order stock from Company A, Jabalpur",
+    start_url: "/shop",
+    display: "standalone",
+    background_color: "#f7f7f4",
+    theme_color: "#1d6b4f",
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+}

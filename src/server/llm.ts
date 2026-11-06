@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { z } from "zod";
+import { z } from "zod/v4"; // the SDK helper takes Zod 4 schemas
 import { env } from "@/lib/env";
 import { parseLine, type ExtractedLine } from "@/domain/capture/parse";
 import { normaliseText, tokenise } from "@/domain/capture/text";

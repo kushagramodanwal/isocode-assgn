@@ -31,7 +31,7 @@ export async function createCapture(input: { actorId: string; retailerId: string
     orderHistory(input.retailerId),
     db.retailerAlias.findMany({ where: { retailerId: input.retailerId } }),
   ]);
-  const catalogue: CatalogueEntry[] = items.map((i) => ({ id: i.id, name: i.name, nameHi: i.nameHi, brand: i.brand, packLabel: i.packLabel, keywords: i.keywords }));
+  const catalogue: CatalogueEntry[] = items.map((i) => ({ id: i.id, name: i.name, nameHi: i.nameHi, brand: i.brand, packLabel: i.packLabel, keywords: i.keywords, category: i.category }));
   const ctx = { catalogue, history, aliases: new Map(aliases.map((a) => [a.phrase, a.productId])) };
   const { lines, parser, note } = await extract(input.text, catalogue);
 
@@ -73,6 +73,8 @@ export type ReviewedLine = {
   unitConfirmed: boolean;
   /** The person looked at a line that was not high confidence. */
   checked: boolean;
+  /** A different SKU was chosen because the matched one is out of stock: not a correction, not learned. */
+  substituted: boolean;
 };
 
 export type ConfirmProblem = { lineId: string; problem: "no_product" | "no_qty" | "unit" | "unchecked" | "unknown_product" };
@@ -115,7 +117,7 @@ export async function confirmCapture(input: { actorId: string; captureId: string
     if (confidenceLevel(line.confidence) !== "high" && !changedProduct && !r.checked) problems.push({ lineId: line.id, problem: "unchecked" });
     if (r.productId && r.cases && validIds.has(r.productId)) {
       items.push({ productId: r.productId, cases: r.cases });
-      if (changedProduct && line.phrase) corrections.push({ phrase: line.phrase, productId: r.productId });
+      if (changedProduct && !r.substituted && line.phrase) corrections.push({ phrase: line.phrase, productId: r.productId });
     }
   }
 
