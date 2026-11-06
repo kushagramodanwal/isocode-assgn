@@ -43,6 +43,14 @@ describe("the brief's sample message", () => {
     expect(lines[2]!.match.alternatives.map((a) => a.productId)).toContain("SKU-TE-500");
   });
 
+  it("always offers two alternatives, never the match itself", () => {
+    for (const msg of ["3 peti poha", "2 peti haldi", "1 peti ketchup"]) {
+      const m = capture(msg)[0]!.match;
+      expect(m.alternatives).toHaveLength(2);
+      expect(m.alternatives.map((a) => a.productId)).not.toContain(m.productId);
+    }
+  });
+
   it("prefers alternatives from the same category as the match", () => {
     const alt = lines[0]!.match.alternatives.map((a) => a.productId);
     expect(alt).toEqual(["SKU-BS-200", "SKU-CB-100"]);

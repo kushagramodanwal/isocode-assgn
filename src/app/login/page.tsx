@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 import { RETAILERS, DESK_USERS } from "../../../prisma/data/people";
 
 export const metadata: Metadata = { title: "Sign in" };
+export const dynamic = "force-dynamic"; // demo panel depends on runtime DEMO_MODE
 
 export default function LoginPage() {
   const demo = env.demoMode

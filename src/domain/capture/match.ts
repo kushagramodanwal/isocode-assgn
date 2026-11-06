@@ -130,17 +130,25 @@ export function matchLine(words: string[], sizes: Size[], ctx: MatchContext): Ma
     confidence,
     level: confidenceLevel(confidence),
     matchedBy: historyDecided ? "history" : "catalogue",
-    alternatives: pickAlternatives(ranked.slice(1), topCategory, ctx),
+    alternatives: pickAlternatives(ranked.slice(1), top.productId, topCategory, ctx),
   };
 }
 
 /**
  * The next two guesses. Same-category products are preferred: if the best match is a biscuit,
  * a biscuit the retailer didn't mean is a better second guess than a detergent that shares a word.
+ * If fewer than two products share any words, the shop's most-ordered products in that category
+ * fill the gap (score 0, so the screen never presents them as word matches).
  */
-function pickAlternatives(rest: Candidate[], category: string | undefined, ctx: MatchContext): Candidate[] {
-  if (!category) return rest.slice(0, 2);
+function pickAlternatives(rest: Candidate[], topId: string, category: string | undefined, ctx: MatchContext): Candidate[] {
   const cat = new Map(ctx.catalogue.map((p) => [p.id, p.category]));
-  const bonus = (c: Candidate) => (cat.get(c.productId) === category ? 15 : 0);
-  return [...rest].sort((a, b) => b.score + bonus(b) - (a.score + bonus(a))).slice(0, 2);
+  const bonus = (c: Candidate) => (category && cat.get(c.productId) === category ? 15 : 0);
+  const picked = [...rest].sort((a, b) => b.score + bonus(b) - (a.score + bonus(a))).slice(0, 2);
+  if (picked.length >= 2 || !category) return picked;
+  const used = new Set([topId, ...picked.map((c) => c.productId)]);
+  const fillers = ctx.catalogue
+    .filter((p) => p.category === category && !used.has(p.id))
+    .sort((a, b) => (ctx.history.get(b.id) ?? 0) - (ctx.history.get(a.id) ?? 0) || (a.id < b.id ? -1 : 1))
+    .map((p) => ({ productId: p.id, score: 0 }));
+  return [...picked, ...fillers].slice(0, 2);
 }
