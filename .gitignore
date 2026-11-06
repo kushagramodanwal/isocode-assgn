@@ -1,14 +1,10 @@
 node_modules/
-.next/
-out/
 dist/
+.next/
 .env
 .env.local
 .env*.local
 *.log
 .DS_Store
 *.tsbuildinfo
-next-env.d.ts
-playwright-report/
-test-results/
 coverage/

@@ -5,9 +5,9 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { BRANDS, PRODUCTS, SCHEMES } from "./data/catalogue";
 import { DESK_USERS, INCOMING_MESSAGES, LEARNED_ALIASES, RETAILERS, SPECIAL_PRICES } from "./data/people";
-import { priceCart, schemeLabelEn, type PricedProduct, type SchemeRule } from "../src/domain/pricing";
-import { parseMessage } from "../src/domain/capture/parse";
-import { matchLine } from "../src/domain/capture/match";
+import { priceCart, schemeLabelEn, type PricedProduct, type SchemeRule } from "../shared/pricing";
+import { parseMessage } from "../shared/capture/parse";
+import { matchLine } from "../shared/capture/match";
 
 const db = new PrismaClient();
 const DAY = 86_400_000;

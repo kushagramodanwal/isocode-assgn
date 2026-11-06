@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Technical Design Document · Company A Orders</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  :root { --ink:#1b1f1d; --muted:#5e6661; --line:#e4e6e1; --accent:#1d6b4f; --soft:#e7f1ec; --warn:#8a5300; --warnsoft:#fdf1dc; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif; color: var(--ink); margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4pt; letter-spacing: -0.01em; }
+  h2 { font-size: 14pt; margin: 22pt 0 6pt; padding-top: 6pt; border-top: 1px solid var(--line); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14pt 0 4pt; break-after: avoid; }
+  p, li { margin: 0 0 6pt; }
+  ul, ol { padding-left: 16pt; margin: 0 0 8pt; }
+  a { color: var(--accent); }
+  code { font: 9pt ui-monospace, SFMono-Regular, Menlo, monospace; background: #f3f4f1; padding: 0 3px; border-radius: 3px; }
+  pre { font: 8.5pt/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: #f5f6f3; border: 1px solid var(--line); border-radius: 6px; padding: 8pt; white-space: pre-wrap; break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 10pt; font-size: 9.5pt; break-inside: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 4pt 6pt; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); font-size: 8.5pt; text-transform: uppercase; letter-spacing: .03em; }
+  tr { break-inside: avoid; }
+  .num { font-variant-numeric: tabular-nums; }
+  .meta { margin: 10pt 0 14pt; padding: 10pt 12pt; border: 1px solid var(--line); border-radius: 8px; background: #fafaf8; }
+  .meta div { margin: 2pt 0; }
+  .meta b { display: inline-block; width: 92pt; color: var(--muted); font-weight: 600; }
+  .note { background: var(--soft); border-radius: 6px; padding: 7pt 10pt; margin: 6pt 0 10pt; }
+  .warn { background: var(--warnsoft); color: #5c3a00; border-radius: 6px; padding: 7pt 10pt; margin: 6pt 0 10pt; }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; color: var(--accent); background: var(--soft); border-radius: 999px; padding: 0 6pt; }
+  .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10pt; margin: 8pt 0; }
+  .shots.wide { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3pt; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+  .page-break { break-before: page; }
+  svg text { font-family: system-ui, sans-serif; }
+</style>
+</head>
+<body>
+
+<h1>Company A Orders</h1>
+<p style="color:var(--muted);margin:0">Technical Design Document · Retailer ordering app with AI order capture for an FMCG distributor in Jabalpur</p>
+
+<div class="meta">
+  <div><b>GitHub</b> <a href="__GITHUB_URL__">__GITHUB_URL__</a></div>
+  <div><b>Live app</b> __LIVE_URL__</div>
+  <div><b>Brief</b> FMCG distributor's retailer ordering app with AI order capture (Software Engineering, core build)</div>
+  <div><b>Demo logins</b> see <code>deployment.md</code>. OTP is mocked: the code is shown on screen in demo mode.</div>
+  <div><b>Date</b> 7 November 2026</div>
+</div>
+
+<h2 style="border-top:0;margin-top:6pt">1. Summary</h2>
+<p>The brief asks for one slice to work end to end: <b>retailer catalogue with prices and schemes, cart and order, AI capture from a text order, and an order desk with Tally export</b>, for two roles (retailer, order desk), with the scheme engine as the hard part. That slice is built and works on realistic sample data. Around it I added the smaller "must haves" that came almost free once the core was right: repeat order, credit limit with holds, a van loading list, the "no order in 14 days" list, Hindi and English, and an installable app shell.</p>
+<div class="cols">
+<div>
+<h3>What works today</h3>
+<ul>
+  <li>OTP sign-in by mobile number, two roles, per-retailer data isolation.</li>
+  <li>Catalogue with the retailer's own price, GST shown on every price, live schemes, stock, low-stock and out-of-stock states, search, repeat last order.</li>
+  <li>Cart priced live on the phone by the same engine the server uses: free goods, slab discounts, "add 1 more case, get 1 free" nudges, stock and credit warnings.</li>
+  <li>Order placement that re-prices on the server, reserves stock, checks credit and is safe against double taps and races.</li>
+  <li>AI capture from a typed or pasted message, with original words, a confidence level, two alternatives, case-or-piece questions, and learning from corrections.</li>
+  <li>Order desk: inbox, credit holds, orders, Tally XML/CSV export batches, van loading, quiet shops.</li>
+</ul>
+</div>
+<div>
+<h3>Honest limits</h3>
+<ul>
+  <li><b>The demo runs the rule-based reader</b>, not an LLM, because no API key is configured. The Claude extraction path is implemented and cross-checked, but has not been run against the live API in this build (§7.5).</li>
+  <li>Photos and voice notes are not captured. Text only.</li>
+  <li>Salesman offline mode is not built. The app is installable and survives a dropped signal (cart on the phone, offline page), but cannot place orders offline.</li>
+  <li>SMS, WhatsApp and Tally are mocked as the brief says: OTP shown on screen, messages pasted by the desk, Tally gets a file.</li>
+  <li>Not deployed at time of writing unless a live URL is shown above.</li>
+</ul>
+</div>
+</div>
+
+<h2>2. The problem in numbers, and where this slice hits it</h2>
+<p>The brief puts the cost at ₹52.5 lakh a year: ₹31.5 lakh from 5% of orders having a wrong item or quantity, ₹15.6 lakh of order-entry staff, ₹5.4 lakh of margin lost to stock-outs found after ordering. The design choices map to those three lines:</p>
+<table>
+  <tr><th>Cost line</th><th>What causes it</th><th>What the app does about it</th></tr>
+  <tr><td>Wrong item / qty <span class="num">(₹31.5 L)</span></td><td>Retyping free text; guessing "dabba" means a case; similar SKUs (75 g vs 200 g)</td><td>Every captured line keeps the retailer's words next to the SKU; units that are not clearly cases are <i>asked</i>; unsure lines must be ticked; corrections become per-shop aliases so the same mistake isn't made twice.</td></tr>
+  <tr><td>Order entry staff <span class="num">(₹15.6 L)</span></td><td>6 people retype everything into Tally next morning</td><td>App orders need no typing. Captured orders need a check, not typing: high-confidence lines are pre-accepted. Export is one click into a Tally import file.</td></tr>
+  <tr><td>Stock-outs after ordering <span class="num">(₹5.4 L)</span></td><td>Salesman and retailer don't see stock at the counter</td><td>Stock is shown per SKU, out-of-stock lines cannot be ordered, the same product's other pack size is offered as a one-tap substitute, and stock is reserved when the order is placed.</td></tr>
+</table>
+
+<h2>3. Architecture</h2>
+<svg viewBox="0 0 720 250" width="100%" role="img" aria-label="Architecture diagram">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5e6661"/></marker></defs>
+  <g font-size="11">
+    <rect x="10" y="20" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="45" text-anchor="middle" font-weight="700">Retailer phone</text><text x="85" y="62" text-anchor="middle" fill="#5e6661">PWA · Hindi / English</text>
+    <rect x="10" y="150" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="175" text-anchor="middle" font-weight="700">Order desk</text><text x="85" y="192" text-anchor="middle" fill="#5e6661">Desktop or phone</text>
+    <rect x="220" y="10" width="300" height="220" rx="10" fill="#fff" stroke="#c9ccc6"/>
+    <text x="370" y="30" text-anchor="middle" font-weight="700">Next.js 15 app (one deployable)</text>
+    <rect x="235" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="300" y="60" text-anchor="middle">Middleware</text><text x="300" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">role gate on routes</text>
+    <rect x="375" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="60" text-anchor="middle">Server components</text><text x="440" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">pages, scoped queries</text>
+    <rect x="235" y="96" width="270" height="40" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="370" y="114" text-anchor="middle">Server actions + /api/export</text><text x="370" y="128" text-anchor="middle" fill="#5e6661" font-size="9.5">zod validation · auth re-checked per call</text>
+    <rect x="235" y="146" width="130" height="74" rx="6" fill="#e7f1ec" stroke="#1d6b4f"/><text x="300" y="166" text-anchor="middle" font-weight="700">domain/ (pure)</text><text x="300" y="182" text-anchor="middle" font-size="9.5">pricing · schemes</text><text x="300" y="196" text-anchor="middle" font-size="9.5">capture parse/match</text><text x="300" y="210" text-anchor="middle" font-size="9.5">tally XML/CSV</text>
+    <rect x="375" y="146" width="130" height="74" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="166" text-anchor="middle" font-weight="700">server/</text><text x="440" y="182" text-anchor="middle" font-size="9.5">orders · credit · OTP</text><text x="440" y="196" text-anchor="middle" font-size="9.5">capture · export</text><text x="440" y="210" text-anchor="middle" font-size="9.5">LLM adapter</text>
+    <rect x="580" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6"/><text x="645" y="54" text-anchor="middle" font-weight="700">PostgreSQL</text><text x="645" y="70" text-anchor="middle" fill="#5e6661">via Prisma</text>
+    <rect x="580" y="100" width="130" height="50" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="121" text-anchor="middle" font-weight="700">Claude API</text><text x="645" y="137" text-anchor="middle" fill="#5e6661">optional</text>
+    <rect x="580" y="164" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="186" text-anchor="middle" font-weight="700">SMS · WhatsApp · Tally</text><text x="645" y="204" text-anchor="middle" fill="#5e6661">mocked</text>
+  </g>
+  <g stroke="#5e6661" fill="none" marker-end="url(#a)"><path d="M160 50H232"/><path d="M160 180H232"/><path d="M522 58H578"/><path d="M522 125H578"/><path d="M522 192H578"/></g>
+  <text x="300" y="244" text-anchor="middle" font-size="9.5" fill="#1d6b4f">same pricing code runs in the cart on the phone</text>
+</svg>
+
+<h3>Why this shape</h3>
+<ul>
+  <li><b>One Next.js app, not an SPA plus a separate API.</b> Six weeks and ₹7 lakh buy one maintainable codebase, not two. Server components send finished HTML, which matters on slow 3G: the catalogue is readable before any JavaScript runs. Server actions remove a hand-written REST layer for the form-like flows here (place order, confirm capture, export).</li>
+  <li><b>A pure <code>domain/</code> layer.</b> The scheme engine, the capture reader and the Tally writer have no database, clock or network. That is what makes them testable with tables of cases, and it lets the <i>same</i> pricing code run in the cart on the phone (instant feedback with no round trip) and on the server (the authority when the order is placed).</li>
+  <li><b>PostgreSQL with row locks.</b> Stock and credit are shared, contended numbers. Order placement runs in one transaction that locks the retailer row (credit) and the product rows (stock) in a fixed order, then re-prices. A test races two orders for the last cases and checks only one wins.</li>
+  <li><b>Prisma</b> for typed queries and migrations; raw SQL only for the two <code>FOR UPDATE</code> locks.</li>
+  <li><b>Hosting plan:</b> Vercel (Mumbai region functions) and a managed Postgres in Mumbai (Neon or Supabase). Both have free tiers that cover a pilot; latency to Jabalpur stays low. See <code>deployment.md</code>.</li>
+</ul>
+<p><b>Considered and rejected:</b> Firebase (weak for transactional stock and credit, and the reporting is relational); a React Native app (the brief asks for an installable web app, and low-end phones have little storage for another app); calling the LLM for everything including SKU matching (opaque confidence, cost per message, and no way to learn per-shop words without fine-tuning).</p>
+
+<h2>4. Data model</h2>
+<table>
+  <tr><th>Entity</th><th>Key fields</th><th>Notes</th></tr>
+  <tr><td><b>User</b></td><td>phone (unique), role RETAILER | DESK, lang, retailerId, active</td><td>A retailer user belongs to one shop. Deactivating takes effect on the next request (session is re-checked against the DB).</td></tr>
+  <tr><td><b>OtpChallenge</b></td><td>phone, codeHash (HMAC), attempts, expiresAt, consumedAt</td><td>Codes are never stored in clear.</td></tr>
+  <tr><td><b>Retailer</b></td><td>code (Tally ledger alias), shop, area, route, creditLimitPaise, outstandingPaise, outstandingAsOf</td><td>Outstanding is a Tally snapshot; the timestamp matters for credit (A-09).</td></tr>
+  <tr><td><b>Product</b> (SKU)</td><td>code, name, nameHi, brand, packLabel, unitsPerCase, unitPricePaise, gstRateBp, stockCases, keywords[]</td><td>Keywords hold shop slang ("peti", "surf", "chai patti") used by capture.</td></tr>
+  <tr><td><b>RetailerPrice</b></td><td>(retailerId, productId) → unitPricePaise</td><td>"His price". Missing row = base dealer price.</td></tr>
+  <tr><td><b>Scheme</b></td><td>type FREE_GOODS (buyCases, freeCases) | SLAB_DISCOUNT (slabs JSON), validFrom, validTo</td><td>Several may exist per SKU; the engine picks one (A-06).</td></tr>
+  <tr><td><b>Order</b> / <b>OrderLine</b></td><td>number, status CONFIRMED | CREDIT_HOLD | EXPORTED | REJECTED, source APP | CAPTURE, totals; line: cases, freeCases, prices, discount, GST, schemeLabel</td><td>Lines snapshot prices so later price changes never rewrite history. <code>idempotencyKey</code> is unique.</td></tr>
+  <tr><td><b>Capture</b> / <b>CaptureLine</b></td><td>rawText, channel, parser, status; line: rawText, phrase, qty, unit CASE | PIECE | UNKNOWN, productId, confidence, matchedBy, alternatives</td><td>The draft a person reviews. Nothing becomes an order until confirmed.</td></tr>
+  <tr><td><b>RetailerAlias</b></td><td>(retailerId, phrase) → productId</td><td>Learned from corrections, per shop.</td></tr>
+  <tr><td><b>ExportBatch</b>, <b>AuditLog</b></td><td>batch of orders sent to Tally; who did what, when</td><td>Batches can be downloaded again. The order page shows the audit trail.</td></tr>
+</table>
+<p>Money is integer paise everywhere; quantities are whole cases. Floating point never touches a rupee.</p>
+
+<h2>5. Main flows</h2>
+<h3>5.1 Retailer orders in the app</h3>
+<ol>
+  <li>Sign in with mobile and OTP. Session cookie: httpOnly, signed, 30 days for retailers (they order between customers and should not re-login daily), 12 hours for the desk.</li>
+  <li>Catalogue shows his price per case, "+ GST %", price per pack, live scheme, and stock. "You order often" and "Repeat last order" sit on top; repeat skips anything now out of stock and says so.</li>
+  <li>The cart lives on the phone (localStorage), so tapping + is instant and nothing is lost if the signal drops. It is priced by the shared engine: free cases, discounts, nudges, GST breakdown, and a warning if the total goes over available credit.</li>
+  <li>Place order sends only product ids, case counts, an idempotency key and the total the person saw. The server re-prices inside a locked transaction. If its total differs (price or stock changed), it refuses and the cart refreshes with a clear message instead of silently charging a different amount.</li>
+  <li>Within credit → <span class="tag">CONFIRMED</span>; over credit → <span class="tag">CREDIT_HOLD</span> with the exact shortfall. Stock (paid + free) is reserved either way.</li>
+</ol>
+<h3>5.2 Message to order (the AI part)</h3>
+<ol>
+  <li>The desk pastes a WhatsApp text and picks the shop (WhatsApp is mocked), or the retailer types the order in the app the way they would on WhatsApp.</li>
+  <li>The reader splits lines, extracts quantity, unit and pack size, and matches each line to a SKU (§7). A <b>Capture</b> draft is saved.</li>
+  <li>The review screen shows, per line: their words, the matched SKU with stock, a confidence label and %, why it matched, two alternatives, a full product picker, and the case-or-piece question where needed. A live preview prices the draft with the scheme engine, so the desk sees free goods and stock problems before confirming.</li>
+  <li>Confirm is blocked until every line is answered. The server enforces the same rules (the UI cannot skip them), creates the order through the same <code>placeOrder</code> path, marks the capture done and saves corrections as aliases, all in one transaction.</li>
+</ol>
+<h3>5.3 Order desk</h3>
+<p>Inbox (oldest message first, credit holds, counts) → review → order page (release hold, reject with a reason the shop sees; rejecting returns stock) → Tally export (select confirmed orders, create a batch, download XML or CSV; a status-guarded update prevents two people exporting the same order) → van loading list by route (paid + free cases) → quiet shops (no order in 14 days, quietest first, tap to call).</p>
+
+<h2>6. The scheme engine (the hard part)</h2>
+<p><code>src/domain/pricing.ts</code> is pure and shared by phone and server. Rules, each covered by tests:</p>
+<table>
+  <tr><th>Rule</th><th>Behaviour</th></tr>
+  <tr><td>Case price</td><td>pack price × packs per case. Biscuit 75 g: ₹8.10 × 96 = <span class="num">₹777.60</span>; detergent 1 kg: ₹101.50 × 20 = <span class="num">₹2,030.00</span>; tea 250 g: ₹118 × 40 = <span class="num">₹4,720.00</span> (A-01).</td></tr>
+  <tr><td>Free goods</td><td>floor(cases ÷ buy) × free, repeating: 10 → 1 free, 20 → 2. No charge and no GST on free cases (A-07, verify).</td></tr>
+  <tr><td>Slab discount</td><td>Highest slab reached applies to the whole line; slabs may be unsorted. GST is charged on the discounted value.</td></tr>
+  <tr><td>One scheme per line</td><td>Never stacked. If two are live, the one worth more to the retailer <i>at that quantity</i> wins, ties by id so pricing is deterministic (A-06).</td></tr>
+  <tr><td>Validity</td><td>Live when validFrom ≤ now ≤ validTo; expired and future schemes are ignored; malformed ones (buy 0) are ignored rather than dividing by zero.</td></tr>
+  <tr><td>Stock</td><td>Out of stock or above stock blocks the line. Free goods come from the same stock: if not enough is left, give what is left and flag it without blocking.</td></tr>
+  <tr><td>Nudges</td><td>"Add N more cases, get 1 free" / "for 3% off" when within half the threshold and stock can cover it (A-08).</td></tr>
+  <tr><td>Rounding</td><td>Integer paise, half up, per line (A-05). Lines that are blocked are priced for display but excluded from totals.</td></tr>
+  <tr><td>Duplicates</td><td>Two cart lines of the same SKU are merged before pricing, so a threshold can't be split or doubled.</td></tr>
+</table>
+<p><b>Worked example from the brief.</b> Detergent 1 kg, 5 cases: gross ₹10,150.00, 3% = ₹304.50, taxable ₹9,845.50, GST 18% = ₹1,772.19, total <b>₹11,617.69</b>. At 2 cases (the brief's sample order) there is no discount and the cart says "Add 3 more cases for 3% off". Biscuit at 5 cases says "Add 5 more cases, get 1 free". Tea 250 g has 0 stock and is blocked, with tea 500 g offered as a substitute.</p>
+
+<h2>7. AI order capture</h2>
+<h3>7.1 Pipeline</h3>
+<pre>message ──► extract (LLM if configured, else rules) ──► per line: words, qty, unit, sizes
+                │                                         │
+                └─ LLM output cross-checked by rules ─────┘
+                                                          ▼
+       match against THIS shop's catalogue  ◄── shop aliases, shop order history
+                                                          ▼
+       SKU + confidence + reason + 2 alternatives ──► person reviews ──► order + learned aliases</pre>
+<p><b>Extraction</b> splits on commas, new lines, "aur/and", numbering and danda; reads digits, Devanagari digits and number words (ek, do, teen, पांच…); separates pack sizes ("1 kilo", "250 wala", "75") from quantities; and reads units: <i>peti, case, carton</i> = case; <i>pkt, pc, nag</i> = piece; <i>dabba, box</i> or nothing = <b>unknown</b>. "do" is two before a unit and "give" at the end ("bhej do").</p>
+<p><b>Matching</b> scores every SKU: word coverage against name, Hindi name, brand and slang keywords (exact, phonetic for Hinglish spellings such as biskut / biscuit, prefix and edit distance), a bonus for intact phrases ("washing powder"), +20 for a matching pack size and −25 for a conflicting one, and up to +8 for SKUs this shop orders often.</p>
+
+<h3>7.2 When it is unsure or wrong</h3>
+<table>
+  <tr><th>Situation</th><th>What happens</th></tr>
+  <tr><td>Two SKUs score close ("biscuit" alone)</td><td>Confidence is reduced by 1.5 × the missing margin below 15 points, so a near tie can't show as "Sure". The shop's history breaks the tie and the screen says "Picked from this shop's past orders".</td></tr>
+  <tr><td>Nothing matches well (score &lt; 35)</td><td>No guess. The line shows "Choose the product" with the best alternatives and the full list.</td></tr>
+  <tr><td>Unit unclear ("10 dabba", "biscuit 5")</td><td>Unit stays UNKNOWN and the person must answer Cases or Pieces. Never guessed (brief).</td></tr>
+  <tr><td>Pieces ("ketchup 24 pkt")</td><td>We sell cases (A-04). 24 pieces of a 24-pack case is shown as "= 1 case"; a non-whole number asks for cases.</td></tr>
+  <tr><td>Quantity missing or a fraction ("aadha peti")</td><td>Left empty; the person enters cases.</td></tr>
+  <tr><td>Medium / low confidence</td><td>The person must tick "I've checked this line". High-confidence lines are pre-accepted, so the desk only reads the doubtful ones.</td></tr>
+  <tr><td>Matched SKU is out of stock</td><td>One-tap substitute with the same product's other pack. Substitutes are <b>not</b> learned: tea 500 g is not what "chai patti 250" means.</td></tr>
+  <tr><td>Wrong SKU picked by the reader</td><td>The person picks an alternative or any product. On confirm, the shop's words become an alias for that SKU, for that shop only. Next time the same words match at 97% with "Learned from an earlier correction".</td></tr>
+  <tr><td>LLM fails, times out or returns bad output</td><td>Falls back to the rule reader; the review screen says so. The desk still gets a draft.</td></tr>
+</table>
+
+<h3>7.3 Measured on the sample messages</h3>
+<p>The brief's message <i>"bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti"</i> gives 3 lines, all units read as cases, all three SKUs correct and "Sure" (93%, 100%, 100%). Across the 4 seeded messages (14 lines, Hinglish, Devanagari, numbered lists, missing units): every SKU correct; 3 lines correctly ask case-or-piece; 1 ambiguous "biscuit 5" correctly drops to "Check · 71%" and is resolved by history; the learned alias "lal wala sabun" matches at 97%. This is a small, hand-made set. Real accuracy has to be measured on the client's real messages (§11).</p>
+
+<h3>7.4 Why rules first, LLM optional</h3>
+<p>Rules are free, instant, offline-capable, deterministic and explainable, and the brief's vocabulary is narrow (21 SKUs, a few dozen slang words). Their weakness is open-ended phrasing. An LLM is good at exactly that, but its confidence is not calibrated and it can't learn a shop's words. So the LLM is used only to <i>extract and normalise</i> lines (structured output against a schema), and the deterministic matcher still decides the SKU and the confidence.</p>
+
+<h3>7.5 The LLM path and its guardrails</h3>
+<p><code>src/server/llm.ts</code> uses the official Anthropic SDK with structured outputs (Zod schema), a 15 s timeout, one retry, low effort, and the catalogue terms in a cached system block. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=anthropic</code> and <code>ANTHROPIC_API_KEY</code>.</p>
+<div class="warn">Not verified against the live API: no key was available while building, so the demo and all tests use the rule reader. The code compiles against the SDK types and falls back safely, but the first job with a key is to run it on the seeded messages and real ones.</div>
+
+<h2>8. Security and privacy</h2>
+<ul>
+  <li><b>Access control in three layers.</b> Middleware gates <code>/shop</code> and <code>/desk</code> by role. Every page and server action re-reads the user from the database (so a deactivated user is out immediately). Every retailer query is scoped by <code>retailerId</code> from the session, never from the URL: another shop's order id simply returns 404. Tested for capture confirmation across shops.</li>
+  <li><b>OTP.</b> 6 random digits, HMAC-hashed, 5-minute expiry, 5 attempts counted atomically before comparing (parallel guesses can't exceed the limit), constant-time compare, 3 codes per 10 minutes and 30 s between sends. The response is the same for registered and unknown numbers, so the form can't reveal who is a customer.</li>
+  <li><b>Validation.</b> Zod on every server action and env var; case counts are whole numbers 1–999; message length capped; product ids checked to exist.</li>
+  <li><b>CSRF.</b> Next.js server actions reject cross-origin POSTs; session cookie is SameSite=Lax, httpOnly, Secure in production. The only GET with side effects is none: export downloads are read-only.</li>
+  <li><b>Output safety.</b> XML is escaped; CSV cells starting with <code>= + - @</code> are neutralised against spreadsheet formula injection.</li>
+  <li><b>Secrets.</b> None in the repository: <code>.env</code> is git-ignored, <code>.env.example</code> lists names only. No real personal data: all shops, people and phone numbers (90000 000xx) are invented.</li>
+  <li><b>Headers.</b> nosniff, frame-deny, strict referrer, permissions-policy; <code>x-powered-by</code> off.</li>
+</ul>
+
+<h2 class="page-break">9. UI and design decisions</h2>
+<p>The client values quiet, minimal design, and shopkeepers order between customers. So: one accent colour (a deep green that reads as "go" and money), warm off-white background, system fonts (Hindi renders with the phone's own Devanagari font, no download), large type for prices, nothing on screen without a job. Every tap target is at least 48 px. Colour always has a second signal (text or icon) for colour-blind users.</p>
+<div class="shots">
+  <figure><img src="img/02-catalogue-hindi.jpg" alt="Catalogue in Hindi"><figcaption><b>Catalogue (Hindi).</b> Price per case is the biggest thing on the card, with "+ GST %" beside it and per-pack price below. "Repeat last order" and "You order often" come first because most orders are repeats.</figcaption></figure>
+  <figure><img src="img/03-cart.jpg" alt="Cart with schemes"><figcaption><b>Cart.</b> Each line shows the scheme it earned and a one-tap nudge ("Add 1, get 1 free"). The out-of-stock line explains itself and blocks the button, instead of failing after tapping.</figcaption></figure>
+  <figure><img src="img/05-desk-inbox-phone.jpg" alt="Desk inbox"><figcaption><b>Desk inbox.</b> Four counts that drive the day, then messages oldest first with "N to check", so the desk knows the effort before opening one.</figcaption></figure>
+</div>
+<div class="shots wide">
+  <figure><img src="img/04-desk-review.jpg" alt="Capture review"><figcaption><b>Capture review.</b> The retailer's words sit above each SKU, with a confidence label in words and %, the reason, two alternatives and a product picker. Credit, recent orders and learned words are in a side panel because they inform but don't need action.</figcaption></figure>
+  <figure><img src="img/06-export.jpg" alt="Tally export"><figcaption><b>Tally export.</b> Confirmed orders are pre-selected; one button makes a batch; earlier batches stay downloadable. Holds are excluded and the page says so.</figcaption></figure>
+</div>
+<p><b>Other choices.</b> Retailer navigation is a bottom tab bar (thumb reach on a phone held in one hand); the desk uses a top bar because it is used at a desk too. Language is a single button, remembered per user. Loading states are skeletons shaped like the content; empty states say what will appear and offer the next action; errors say what to do ("Check your signal… your cart is saved"). Status pills use words, not only colours.</p>
+
+<h2>10. Performance on slow 3G</h2>
+<ul>
+  <li>Pages are server-rendered: HTML with prices arrives before JavaScript, and the catalogue is usable as it hydrates.</li>
+  <li>First-load JavaScript is 103–115 kB gzipped per route (most of it is React and Next.js itself); route-specific code is 0.2–3.3 kB.</li>
+  <li>No web fonts and no image requests: pack illustrations are inline SVG of about 600 bytes each, coloured by brand.</li>
+  <li>The cart is local, so adding cases costs no network at all. Service worker caches static assets for repeat visits and shows an offline page instead of the browser's error.</li>
+  <li><b>Estimate:</b> on Chrome's "Slow 3G" profile a cold first visit is roughly 2.5–3 s to usable; repeat visits are under 1.5 s with cached assets. <i>Not yet measured on a real low-end phone</i>; that is a pilot-week task.</li>
+</ul>
+
+<h2>11. Tests</h2>
+<p><b>91 tests</b> (Vitest), run in CI with Postgres:</p>
+<ul>
+  <li><b>Scheme engine, 44:</b> the brief's three SKUs, every free-goods threshold and nudge, slab boundaries and unsorted slabs, competing schemes, validity edges, stock caps, invalid quantities, rounding, merging duplicates, credit maths.</li>
+  <li><b>Capture reader, 31:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered.</li>
+  <li><b>Tally export, 7:</b> XML escaping, India date, actual vs billed quantity, debit = credits balance, CGST/SGST split, CSV quoting and formula neutralising.</li>
+  <li><b>Database integration, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock, capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
+</ul>
+
+<h2>12. Assumptions</h2>
+<p>Only the brief was used. Where it is silent, I decided and labelled it here. Items marked <b>verify</b> need the client.</p>
+<table>
+  <tr><th>#</th><th>Assumption</th></tr>
+  <tr><td>A-01</td><td>The sample "Dealer Price" is per pack; case price = pack price × packs per case (₹8.10 is a sensible price for a 75 g biscuit, not a case of 96).</td></tr>
+  <tr><td>A-02</td><td>Dealer prices exclude GST. Every price says "+ GST %"; the cart shows the GST-inclusive total.</td></tr>
+  <tr><td>A-03</td><td>GST rates are placeholders: packaged food 5%, salt 0%, home care 18%. <b>Verify</b> with the client's accountant; not tax advice.</td></tr>
+  <tr><td>A-04</td><td>Retailers order whole cases. Pieces are converted to cases where exact, otherwise the reviewer enters cases. Loose-piece selling is out of scope.</td></tr>
+  <tr><td>A-05</td><td>Money in integer paise; discount and GST rounded half up per line.</td></tr>
+  <tr><td>A-06</td><td>One scheme per SKU line, never stacked; if several are live, the one worth most to the retailer at that quantity.</td></tr>
+  <tr><td>A-07</td><td>Free goods use the same stock, carry no charge and no GST. Whether GST applies to free supplies is for the accountant: <b>verify</b>.</td></tr>
+  <tr><td>A-08</td><td>Nudges appear within half of the next threshold (rounded up) and only if stock can cover it.</td></tr>
+  <tr><td>A-09</td><td>Available credit = limit − outstanding from the last Tally sync − orders accepted since that sync. Held orders don't count until released.</td></tr>
+  <tr><td>A-10</td><td>An order over credit is accepted on hold, not refused, and the retailer is warned before placing it. The desk releases or rejects.</td></tr>
+  <tr><td>A-11</td><td>Stock is reserved when an order is placed (including holds) and returned on rejection. Stock figures would come from Tally (mocked).</td></tr>
+  <tr><td>A-12</td><td>Retailer screens are Hindi and English; the order desk works in English. Hindi copy needs a native review.</td></tr>
+  <tr><td>A-13</td><td>Corrections by whoever confirms (desk, or a retailer on their own order) become aliases scoped to that shop. Substitutions for stock are not learned.</td></tr>
+  <tr><td>A-14</td><td>Orders go to Tally as <i>Sales Order</i> vouchers; invoicing and e-invoicing stay in Tally. Ledger names ("Sales GST 18%", "Output CGST 9%", party "Shop (code)") are placeholders that must match the client's masters; intra-state (MP), so CGST + SGST. <b>Verify</b>.</td></tr>
+  <tr><td>A-15</td><td>WhatsApp is mocked: the desk pastes a message and picks the shop (in production the sender's number identifies it).</td></tr>
+  <tr><td>A-16</td><td>Van loading list = accepted orders from the last 24 hours, grouped by the shop's route.</td></tr>
+  <tr><td>A-17</td><td>All brands, shops, people and numbers in the seed are invented. Schemes in the seed run from 36 days before to 60 days after seeding so the demo never expires.</td></tr>
+  <tr><td>A-18</td><td>Sessions last 30 days for retailers and 12 hours for the desk.</td></tr>
+</table>
+
+<h2>13. What I cut, and what I would do next</h2>
+<div class="cols">
+<div>
+<h3>Cut, on purpose</h3>
+<ul>
+  <li><b>Photo and Hindi voice-note capture.</b> Same review screen; needs a vision/speech step before extraction. Cut to make text capture solid first.</li>
+  <li><b>Salesman mode and offline ordering.</b> Needs a local queue (IndexedDB), conflict rules for stock and credit, and a sync screen. Too risky to do badly.</li>
+  <li><b>Real SMS, WhatsApp and Tally integration</b> (mocked, per the brief).</li>
+  <li><b>Admin screens</b> for products, prices, schemes and users (seeded instead).</li>
+  <li>Payments, delivery tracking, e-invoicing (out of scope).</li>
+</ul>
+</div>
+<div>
+<h3>Next, in order</h3>
+<ol>
+  <li>Turn on the LLM with a key; build an evaluation set from 200 real WhatsApp orders; tune thresholds on it and track accuracy weekly.</li>
+  <li>WhatsApp Business API inbound webhook, so messages arrive in the inbox by themselves, matched to the shop by number.</li>
+  <li>Photos of handwritten lists and Hindi voice notes into the same pipeline.</li>
+  <li>Salesman mode: offline catalogue and order queue, sync with server-side re-pricing (the engine already supports it).</li>
+  <li>Scheme and price admin for the office, with a preview using the same engine.</li>
+  <li>Tally sync for stock and outstanding (ODBC/XML), replacing the mocked snapshots.</li>
+  <li>Measure on a real low-end phone on 3G; rate limiting at the edge; error monitoring.</li>
+</ol>
+</div>
+</div>
+
+</body>
+</html>
