@@ -1,23 +1,14 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: retailer_ordering_postgres
-    restart: unless-stopped
+  db:
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: retailer_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      POSTGRES_DB: fmcg
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d retailer_db"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
-      timeout: 5s
-      retries: 5
-
 volumes:
   pgdata:
