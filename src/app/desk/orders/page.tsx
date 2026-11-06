@@ -46,7 +46,7 @@ export default async function DeskOrders({ searchParams }: { searchParams: Promi
           <button className="btn btn-secondary btn-sm">Search</button>
         </form>
       </div>
-      <nav className="mb-4 flex gap-1 overflow-x-auto" aria-label="Status">
+      <nav className="no-scrollbar mb-4 flex gap-1 overflow-x-auto" aria-label="Status">
         {TABS.map((t) => (
           <Link key={t.key} href={t.key === "ALL" ? "/desk/orders" : `/desk/orders?status=${t.key}`} aria-current={status === t.key ? "page" : undefined}
             className={`btn btn-sm shrink-0 ${status === t.key ? "btn-primary" : "btn-secondary"}`}>{t.label}</Link>

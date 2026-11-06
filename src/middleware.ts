@@ -10,8 +10,10 @@ export async function middleware(req: NextRequest) {
   const claims = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
   const home = (role: string) => new URL(role === "DESK" ? "/desk" : "/shop", req.url);
 
-  if (pathname === "/" ) return NextResponse.redirect(claims ? home(claims.role) : new URL("/login", req.url));
-  if (pathname.startsWith("/login")) return claims ? NextResponse.redirect(home(claims.role)) : NextResponse.next();
+  if (pathname === "/") return NextResponse.redirect(claims ? home(claims.role) : new URL("/login", req.url));
+  // /login decides for itself (it checks the database), so a token for a deleted or
+  // deactivated user can't cause a redirect loop.
+  if (pathname.startsWith("/login")) return NextResponse.next();
   if (!claims) return NextResponse.redirect(new URL("/login", req.url));
   if (pathname.startsWith("/shop") && claims.role !== "RETAILER") return NextResponse.redirect(home(claims.role));
   if ((pathname.startsWith("/desk") || pathname.startsWith("/api/export")) && claims.role !== "DESK") {

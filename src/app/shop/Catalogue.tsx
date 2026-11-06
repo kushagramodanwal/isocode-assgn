@@ -58,7 +58,7 @@ export function Catalogue({ lang, items, frequent, lastOrder }: Props) {
       <div className="sticky top-[61px] z-[5] -mx-4 bg-[var(--color-bg)] px-4 pb-3">
         <label className="sr-only" htmlFor="search">{t.search}</label>
         <input id="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} className="field" autoComplete="off" />
-        <div className="mt-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Category">
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Category">
           {(["all", "food", "home"] as const).map((c) => (
             <button key={c} role="tab" aria-selected={cat === c} onClick={() => setCat(c)}
               className={`btn btn-sm shrink-0 ${cat === c ? "btn-primary" : "btn-secondary"}`}>
@@ -69,7 +69,7 @@ export function Catalogue({ lang, items, frequent, lastOrder }: Props) {
       </div>
       {lastOrder && !query && (
         <button onClick={repeatLast} className="card mb-4 flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left">
-          <span><span className="font-semibold">↻ {t.repeatLast}</span><span className="block text-xs text-[var(--color-muted)]">{t.orderNo(lastOrder.number)} · {lastOrder.lines.length} items</span></span>
+          <span><span className="font-semibold">↻ {t.repeatLast}</span><span className="block text-xs text-[var(--color-muted)]">{t.orderNo(lastOrder.number)} · {t.items(lastOrder.lines.length)}</span></span>
           <span className="text-[var(--color-accent)]" aria-hidden>+</span>
         </button>
       )}

@@ -72,6 +72,7 @@ const en = {
     needs: (n: number) => `${n} line${n === 1 ? "" : "s"} still need${n === 1 ? "s" : ""} an answer`,
     problem: { no_product: "Choose a product", no_qty: "Enter cases", unit: "Answer case or piece", unchecked: "Tick when checked", unknown_product: "Product no longer sold" } as Record<string, string>,
     done: "This message is already handled.",
+    blockedHint: "A line is out of stock or above stock. Substitute or remove it.",
 };
 const hi: Strings = {
     original: "मैसेज",
@@ -107,6 +108,7 @@ const hi: Strings = {
     needs: (n: number) => `${n} लाइन में जवाब बाकी`,
     problem: { no_product: "सामान चुनें", no_qty: "पेटी लिखें", unit: "पेटी या पैकेट चुनें", unchecked: "जाँच कर टिक करें", unknown_product: "यह सामान अब नहीं बिकता" } as Record<string, string>,
     done: "यह मैसेज पहले ही निपट गया है।",
+    blockedHint: "एक सामान स्टॉक में नहीं है। बदलें या हटाएँ।",
 };
 const L: Record<Lang, Strings> = { en, hi };
 
@@ -218,8 +220,12 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
 
       {result && !result.ok && <p role="alert" className="rounded-xl bg-[var(--color-danger-soft)] px-4 py-3 text-sm text-[var(--color-danger)]">{result.message}</p>}
 
-      <div className="sticky bottom-16 -mx-4 space-y-2 bg-[var(--color-bg)] px-4 pt-2 pb-3 md:bottom-0">
-        {unresolved.length > 0 && <p className="text-center text-sm text-[var(--color-warn)]">{s.needs(unresolved.length)}</p>}
+      <div className={`sticky -mx-4 space-y-2 border-t border-[var(--color-line)] bg-[var(--color-bg)] px-4 pt-3 pb-3 ${role === "RETAILER" ? "bottom-16" : "bottom-0"}`}>
+        {unresolved.length > 0 ? (
+          <p className="text-center text-sm text-[var(--color-warn)]">{s.needs(unresolved.length)}</p>
+        ) : quote.blocked && quote.lines.length > 0 ? (
+          <p className="text-center text-sm text-[var(--color-danger)]">{s.blockedHint}</p>
+        ) : null}
         <div className="flex gap-2">
           <button className="btn btn-secondary" disabled={discarding || pending} onClick={() => startDiscard(() => discardCaptureAction(capture.id))}>{s.discard}</button>
           <button className="btn btn-primary flex-1" disabled={pending || unresolved.length > 0 || quote.blocked} onClick={confirm}>

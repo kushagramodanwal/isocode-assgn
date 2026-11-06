@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LoginForm } from "./LoginForm";
+import { currentUser } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { RETAILERS, DESK_USERS } from "../../../prisma/data/people";
 
 export const metadata: Metadata = { title: "Sign in" };
 export const dynamic = "force-dynamic"; // demo panel depends on runtime DEMO_MODE
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await currentUser();
+  if (user) redirect(user.role === "DESK" ? "/desk" : "/shop");
   const demo = env.demoMode
     ? [
         { phone: RETAILERS[0]!.phone, who: `${RETAILERS[0]!.shopName}`, role: "Retailer" },

@@ -34,7 +34,7 @@ export default async function OrdersPage() {
             <li key={o.id}>
               <Link href={`/shop/orders/${o.id}`} className="flex min-h-16 items-center justify-between gap-3 px-4 py-3">
                 <div>
-                  <p className="font-medium">{t.orderNo(o.number)} <span className="text-sm font-normal text-[var(--color-muted)]">· {o._count.lines} items</span></p>
+                  <p className="font-medium">{t.orderNo(o.number)} <span className="text-sm font-normal text-[var(--color-muted)]">· {t.items(o._count.lines)}</span></p>
                   <p className="text-xs text-[var(--color-muted)]">{when(o.createdAt)}</p>
                 </div>
                 <div className="text-right">

@@ -65,3 +65,7 @@ textarea.field { padding: .75rem .9rem; min-height: 140px; line-height: 1.5; }
 @keyframes shimmer { 0% { background-position: -400px 0 } 100% { background-position: 400px 0 } }
 .skeleton { background: linear-gradient(90deg, #eceee9 0, #f5f6f3 40px, #eceee9 80px); background-size: 800px 100%; animation: shimmer 1.2s infinite linear; border-radius: 10px; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* Horizontal tab strips scroll by touch without showing a scrollbar. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

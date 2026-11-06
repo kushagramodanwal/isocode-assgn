@@ -12,7 +12,7 @@ export function DeskNav({ counts }: { counts: { inbox: number; export: number } 
     { href: "/desk/retailers", label: "Quiet shops", active: path.startsWith("/desk/retailers") },
   ];
   return (
-    <nav aria-label="Desk" className="-mx-4 overflow-x-auto px-4">
+    <nav aria-label="Desk" className="no-scrollbar -mx-4 overflow-x-auto px-4">
       <ul className="flex gap-1">
         {items.map((i) => (
           <li key={i.href}>
