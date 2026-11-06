@@ -45,6 +45,19 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
    LLM_PROVIDER=none
    ```
 
+   To read messages with Gemini instead of the rule-based reader, create a key at https://aistudio.google.com/apikey and set:
+
+   ```
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=<your key>
+   ```
+
+   Then compare Gemini with the rule-based reader on the four sample messages:
+
+   ```bash
+   npm run ai:check
+   ```
+
 4. Create the tables and load the sample data (18 shops, 21 SKUs, 216 past orders, 4 WhatsApp messages waiting).
 
    ```bash
@@ -69,7 +82,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
 npm test
 ```
 
-Runs 102 tests. The 20 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
+Runs 115 tests. The 20 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
@@ -160,9 +173,9 @@ Names only. Never commit values. `.env.example` lists the same names.
 | `APP_ORIGIN` | in production | Public URL of the app, e.g. `https://orders.example.in`. State-changing requests from other origins are refused |
 | `PORT` | no | Port to listen on (default 4000; most hosts set it) |
 | `NODE_ENV` | no | `npm start` sets `production` |
-| `LLM_PROVIDER` | no | `anthropic` to use Claude for reading messages; `none` (default) uses the built-in rule-based reader |
-| `ANTHROPIC_API_KEY` | only with `LLM_PROVIDER=anthropic` | Claude API key |
-| `LLM_MODEL` | no | Override the Claude model (default `claude-opus-5-5`) |
+| `LLM_PROVIDER` | no | `gemini` to use Google Gemini for reading messages; `none` (default) uses the built-in rule-based reader |
+| `GEMINI_API_KEY` | only with `LLM_PROVIDER=gemini` | Google AI Studio API key (free tier works) |
+| `LLM_MODEL` | no | Override the Gemini model (default `gemini-flash-latest`) |
 | `TEST_DATABASE_URL` | tests only | Separate database for integration tests |
 
 ## Mocked outside systems

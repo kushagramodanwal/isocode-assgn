@@ -67,7 +67,7 @@
 <div>
 <h3>Honest limits</h3>
 <ul>
-  <li><b>The demo runs the rule-based reader</b>, not an LLM, because no API key is configured. The Claude extraction path is implemented and cross-checked, but has not been run against the live API in this build (§7.5).</li>
+  <li><b>The demo runs the rule-based reader</b>, not an LLM, because no API key is configured. The Google Gemini extraction path (free AI Studio tier) is implemented, cross-checked and unit-tested with a mocked SDK, but has not been run against the live API in this build (§7.5).</li>
   <li>Photos and voice notes are not captured. Text only.</li>
   <li>Salesman offline mode is not built. The app is installable and survives a dropped signal (cart on the phone, offline page), but cannot place orders offline.</li>
   <li>SMS, WhatsApp and Tally are mocked as the brief says: OTP shown on screen, messages pasted by the desk, Tally gets a file.</li>
@@ -99,7 +99,7 @@
     <rect x="235" y="146" width="130" height="74" rx="6" fill="#e7f1ec" stroke="#1d6b4f"/><text x="300" y="166" text-anchor="middle" font-weight="700">domain/ (pure)</text><text x="300" y="182" text-anchor="middle" font-size="9.5">pricing · schemes</text><text x="300" y="196" text-anchor="middle" font-size="9.5">capture parse/match</text><text x="300" y="210" text-anchor="middle" font-size="9.5">tally XML/CSV</text>
     <rect x="375" y="146" width="130" height="74" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="166" text-anchor="middle" font-weight="700">server/</text><text x="440" y="182" text-anchor="middle" font-size="9.5">orders · credit · OTP</text><text x="440" y="196" text-anchor="middle" font-size="9.5">capture · export</text><text x="440" y="210" text-anchor="middle" font-size="9.5">LLM adapter</text>
     <rect x="580" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6"/><text x="645" y="54" text-anchor="middle" font-weight="700">PostgreSQL</text><text x="645" y="70" text-anchor="middle" fill="#5e6661">via Prisma</text>
-    <rect x="580" y="100" width="130" height="50" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="121" text-anchor="middle" font-weight="700">Claude API</text><text x="645" y="137" text-anchor="middle" fill="#5e6661">optional</text>
+    <rect x="580" y="100" width="130" height="50" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="121" text-anchor="middle" font-weight="700">Gemini API</text><text x="645" y="137" text-anchor="middle" fill="#5e6661">optional</text>
     <rect x="580" y="164" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="186" text-anchor="middle" font-weight="700">SMS · WhatsApp · Tally</text><text x="645" y="204" text-anchor="middle" fill="#5e6661">mocked</text>
   </g>
   <g stroke="#5e6661" fill="none" marker-end="url(#a)"><path d="M160 50H232"/><path d="M160 180H232"/><path d="M522 58H578"/><path d="M522 125H578"/><path d="M522 192H578"/></g>
@@ -206,8 +206,8 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 <p>Rules are free, instant, offline-capable, deterministic and explainable, and the brief's vocabulary is narrow (21 SKUs, a few dozen slang words). Their weakness is open-ended phrasing. An LLM is good at exactly that, but its confidence is not calibrated and it can't learn a shop's words. So the LLM is used only to <i>extract and normalise</i> lines (structured output against a schema), and the deterministic matcher still decides the SKU and the confidence.</p>
 
 <h3>7.5 The LLM path and its guardrails</h3>
-<p><code>server/src/services/llm.ts</code> uses the official Anthropic SDK with structured outputs (Zod schema), a 15 s timeout, one retry, low effort, and the catalogue terms in a cached system block. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=anthropic</code> and <code>ANTHROPIC_API_KEY</code>.</p>
-<div class="warn">Not verified against the live API: no key was available while building, so the demo and all tests use the rule reader. The code compiles against the SDK types and falls back safely, but the first job with a key is to run it on the seeded messages and real ones.</div>
+<p><code>server/src/services/llm.ts</code> uses Google's official <code>@google/genai</code> SDK with a Google AI Studio key (the free tier is enough for a pilot's volume). It asks for JSON constrained to a response schema, at temperature 0, with a 15 s timeout and the catalogue terms in the system instruction, then validates the reply again with zod. A blocked prompt, a safety or length stop, non-JSON or wrong-shaped output, a network error or a timeout all raise, and capture falls back to the rule reader. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=gemini</code> and <code>GEMINI_API_KEY</code>; the model defaults to the <code>gemini-flash-latest</code> alias and can be pinned with <code>LLM_MODEL</code>.</p>
+<div class="warn">Not verified against the live API: no key was available while building, so the demo uses the rule reader. 13 tests cover the adapter with a mocked SDK (good answer, every failure mode, and the unit/quantity cross-checks), but the first job with a key is to run it on the seeded messages and real ones. Note: on the free tier Google may use prompts to improve its products, so real customer messages should move to a paid key before launch.</div>
 
 <h2>8. Security and privacy</h2>
 <ul>
@@ -244,12 +244,13 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 </ul>
 
 <h2>11. Tests</h2>
-<p><b>102 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
+<p><b>115 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
 <ul>
   <li><b>Scheme engine, 44:</b> the brief's three SKUs, every free-goods threshold and nudge, slab boundaries and unsorted slabs, competing schemes, validity edges, stock caps, invalid quantities, rounding, merging duplicates, credit maths.</li>
   <li><b>Capture reader, 31:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered.</li>
   <li><b>Tally export, 7:</b> XML escaping, India date, actual vs billed quantity, debit = credits balance, CGST/SGST split, CSV quoting and formula neutralising.</li>
   <li><b>Services against Postgres, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock; capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
+  <li><b>Gemini adapter (mocked), 13:</b> a good answer becomes lines; not-JSON, wrong shape, cut off, safety stop, blocked prompt, network error and timeout all fall back; the model never decides the unit; a quantity disagreement empties the field.</li>
   <li><b>HTTP API, 11:</b> no session → 401; retailer → desk endpoints 403; another shop's order → 404; deactivated user and tampered token locked out; desk can read any order; cross-origin write → 403; form-encoded write → 415; validation messages; bad quantities rejected; unknown phone gets the same answer as a known one.</li>
 </ul>
 
@@ -292,7 +293,7 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 <div>
 <h3>Next, in order</h3>
 <ol>
-  <li>Turn on the LLM with a key; build an evaluation set from 200 real WhatsApp orders; tune thresholds on it and track accuracy weekly.</li>
+  <li>Turn on Gemini with a key; build an evaluation set from 200 real WhatsApp orders; tune thresholds on it and track accuracy weekly.</li>
   <li>WhatsApp Business API inbound webhook, so messages arrive in the inbox by themselves, matched to the shop by number.</li>
   <li>Photos of handwritten lists and Hindi voice notes into the same pipeline.</li>
   <li>Salesman mode: offline catalogue and order queue, sync with server-side re-pricing (the engine already supports it).</li>

@@ -8,8 +8,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   DEMO_MODE: z.enum(["true", "false"]).default("false"),
-  LLM_PROVIDER: z.enum(["anthropic", "none"]).default("none"),
-  ANTHROPIC_API_KEY: z.string().optional(),
+  LLM_PROVIDER: z.enum(["gemini", "none"]).default("none"),
+  GEMINI_API_KEY: z.string().optional(),
   LLM_MODEL: z.string().optional(),
   PORT: z.coerce.number().int().positive().default(4000),
   // Public origin(s) of the web app, comma separated. Mutating requests from other origins are refused.
@@ -26,7 +26,8 @@ export const env = {
   ...parsed.data,
   isProd: parsed.data.NODE_ENV === "production",
   demoMode: parsed.data.DEMO_MODE === "true",
-  llmEnabled: parsed.data.LLM_PROVIDER === "anthropic" && !!parsed.data.ANTHROPIC_API_KEY,
-  llmModel: parsed.data.LLM_MODEL || "claude-opus-5-5",
+  llmEnabled: parsed.data.LLM_PROVIDER === "gemini" && !!parsed.data.GEMINI_API_KEY,
+  // A stable alias on the free AI Studio tier; override with LLM_MODEL to pin a version.
+  llmModel: parsed.data.LLM_MODEL || "gemini-flash-latest",
   allowedOrigins: parsed.data.APP_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean),
 };

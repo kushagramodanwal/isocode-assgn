@@ -99,7 +99,9 @@ describe.skipIf(!run)("API request guards", () => {
   });
 
   it("does not reveal whether a phone number is registered", async () => {
-    const unknown = await request(app).post("/api/auth/otp").send({ phone: "6999999999" });
+    // A fresh unregistered number each run, so the 30 s resend limit from a previous run can't interfere.
+    const unknownPhone = `6${String(Date.now()).slice(-9)}`;
+    const unknown = await request(app).post("/api/auth/otp").send({ phone: unknownPhone });
     expect(unknown.status).toBe(200);
     expect(unknown.body).toEqual({ ok: true });
   });
