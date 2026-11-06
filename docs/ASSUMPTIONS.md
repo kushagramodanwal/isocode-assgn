@@ -29,3 +29,6 @@ Every ambiguity in the brief is resolved here with a label. Items marked **verif
 - **A-15** The brief's exact sample message wasn't included, so it's reconstructed as `Bhaiya 5 peti biscuit 75 wala, 2 carton surf 1 kilo aur 1 dabba chai patti 250 wala bhej dena` (5 biscuit, 2 detergent, 1 tea). SKU codes for the brief's other two items are `SKU-DT-1KG` and `SKU-TE-250`; their stock is 200 and 0.
 - **A-16** Retailers have a free-text `segment` (`URBAN`, `SEMI_URBAN`) that schemes can target.
 - **A-17** Seeded order history uses plain price + GST (no schemes). It only exists for "frequently bought", repeat order and the inactivity dashboard.
+- **A-18** Nudge distance: a nudge shows when the gap to the next threshold is ≤ `ceil(threshold × 0.5)` (`NUDGE_MAX_FRACTION`). The ceiling matters: the brief expects a nudge at 2 detergent cases against a 5-case slab (gap 3 = ceil(2.5)). Nudges are also suppressed when stock can't cover the next threshold.
+- **A-19** If two valid schemes target the same SKU, the one with the latest `validFrom` wins (ties by id), which keeps pricing deterministic.
+- **A-20** Lines with errors (out of stock, invalid qty, no price) are priced for display but excluded from totals, and they block placing the order.
