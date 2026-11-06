@@ -1,0 +1,279 @@
+// Money is stored as integer paise everywhere. Quantities are whole cases.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  RETAILER
+  DESK
+}
+
+enum Lang {
+  en
+  hi
+}
+
+model User {
+  id         String    @id @default(cuid())
+  phone      String    @unique // 10-digit Indian mobile, no +91
+  name       String
+  role       Role
+  lang       Lang      @default(en)
+  retailerId String?
+  retailer   Retailer? @relation(fields: [retailerId], references: [id])
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  ordersPlaced   Order[]         @relation("placedBy")
+  captures       Capture[]
+  aliasesCreated RetailerAlias[]
+  exportBatches  ExportBatch[]
+  auditLogs      AuditLog[]
+}
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Retailer {
+  id                String   @id @default(cuid())
+  code              String   @unique // Tally ledger alias, e.g. JBP-R-0001
+  shopName          String
+  ownerName         String
+  area              String
+  route             String // van route used for loading lists
+  phone             String
+  creditLimitPaise  Int
+  outstandingPaise  Int // as of outstandingAsOf, synced from Tally (mocked)
+  outstandingAsOf   DateTime
+  createdAt         DateTime @default(now())
+
+  users    User[]
+  prices   RetailerPrice[]
+  orders   Order[]
+  captures Capture[]
+  aliases  RetailerAlias[]
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  code           String   @unique // SKU code, e.g. SKU-BS-075
+  name           String
+  nameHi         String
+  brandId        String
+  brand          Brand    @relation(fields: [brandId], references: [id])
+  category       String // food | home
+  packLabel      String // "75 g", "1 kg"
+  unitsPerCase   Int
+  unitPricePaise Int // dealer price per pack, excluding GST
+  gstRateBp      Int // basis points, 1800 = 18%
+  stockCases     Int
+  image          String
+  // Extra words shopkeepers use for this SKU (Hindi, Hinglish, slang). Used by order capture.
+  keywords       String[]
+  active         Boolean  @default(true)
+
+  prices       RetailerPrice[]
+  schemes      Scheme[]
+  orderLines   OrderLine[]
+  captureLines CaptureLine[]
+  aliases      RetailerAlias[]
+}
+
+model RetailerPrice {
+  retailerId     String
+  productId      String
+  unitPricePaise Int
+  retailer       Retailer @relation(fields: [retailerId], references: [id])
+  product        Product  @relation(fields: [productId], references: [id])
+
+  @@id([retailerId, productId])
+}
+
+enum SchemeType {
+  FREE_GOODS // buy `buyCases` get `freeCases` free, repeats
+  SLAB_DISCOUNT // percentage off the line once a slab's minimum is reached
+}
+
+model Scheme {
+  id        String     @id @default(cuid())
+  productId String
+  product   Product    @relation(fields: [productId], references: [id])
+  type      SchemeType
+  buyCases  Int?
+  freeCases Int?
+  // [{ "minCases": 5, "percentBp": 300 }, ...]
+  slabs     Json?
+  validFrom DateTime
+  validTo   DateTime
+  active    Boolean    @default(true)
+
+  @@index([productId])
+}
+
+enum OrderSource {
+  APP
+  CAPTURE
+}
+
+enum OrderStatus {
+  CONFIRMED // ready for Tally export
+  CREDIT_HOLD // over available credit, desk must release or reject
+  EXPORTED
+  REJECTED
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  number         Int         @unique @default(autoincrement())
+  retailerId     String
+  retailer       Retailer    @relation(fields: [retailerId], references: [id])
+  placedById     String
+  placedBy       User        @relation("placedBy", fields: [placedById], references: [id])
+  source         OrderSource
+  status         OrderStatus
+  grossPaise     Int
+  discountPaise  Int
+  taxablePaise   Int
+  gstPaise       Int
+  totalPaise     Int
+  holdReason     String?
+  rejectReason   String?
+  exportBatchId  String?
+  exportBatch    ExportBatch? @relation(fields: [exportBatchId], references: [id])
+  idempotencyKey String      @unique
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  lines   OrderLine[]
+  capture Capture?
+
+  @@index([retailerId, createdAt])
+  @@index([status])
+}
+
+model OrderLine {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  cases          Int
+  freeCases      Int
+  unitPricePaise Int
+  casePricePaise Int
+  grossPaise     Int
+  discountPaise  Int
+  taxablePaise   Int
+  gstRateBp      Int
+  gstPaise       Int
+  totalPaise     Int
+  schemeLabel    String?
+}
+
+enum CaptureStatus {
+  NEEDS_REVIEW
+  CONFIRMED
+  DISCARDED
+}
+
+enum CaptureChannel {
+  WHATSAPP_TEXT // pasted by the desk (WhatsApp itself is mocked)
+  APP_TEXT // typed by the retailer in the app
+}
+
+model Capture {
+  id          String         @id @default(cuid())
+  retailerId  String
+  retailer    Retailer       @relation(fields: [retailerId], references: [id])
+  createdById String
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  channel     CaptureChannel
+  rawText     String
+  parser      String // "rules" or "llm:<model>"
+  parserNote  String? // why the parser fell back, if it did
+  status      CaptureStatus  @default(NEEDS_REVIEW)
+  orderId     String?        @unique
+  order       Order?         @relation(fields: [orderId], references: [id])
+  createdAt   DateTime       @default(now())
+
+  lines CaptureLine[]
+
+  @@index([status, createdAt])
+}
+
+enum CaptureUnit {
+  CASE
+  PIECE
+  UNKNOWN
+}
+
+model CaptureLine {
+  id           String      @id @default(cuid())
+  captureId    String
+  capture      Capture     @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  position     Int
+  rawText      String // the retailer's original words for this line
+  phrase       String // normalised product words, used as the alias key
+  qty          Int?
+  unit         CaptureUnit
+  productId    String?
+  product      Product?    @relation(fields: [productId], references: [id])
+  confidence   Int // 0..100
+  matchedBy    String // alias | history | catalogue | none
+  // [{ "productId": "...", "score": 61 }, ...] two best alternatives
+  alternatives Json
+}
+
+model RetailerAlias {
+  id          String   @id @default(cuid())
+  retailerId  String
+  retailer    Retailer @relation(fields: [retailerId], references: [id])
+  phrase      String
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([retailerId, phrase])
+}
+
+model ExportBatch {
+  id          String   @id @default(cuid())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  orders      Order[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String
+  entityId  String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entityId])
+}
