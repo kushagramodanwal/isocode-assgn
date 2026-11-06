@@ -1,5 +1,6 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 import helmet from "helmet";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -43,6 +44,7 @@ export function createApp() {
       crossOriginEmbedderPolicy: false,
     }),
   );
+  app.use(compression()); // 349 kB of JS becomes ~110 kB on the wire: matters on 3G
   app.use(express.json({ limit: "64kb" }));
   app.use(cookieParser());
 

@@ -89,13 +89,13 @@
 <svg viewBox="0 0 720 250" width="100%" role="img" aria-label="Architecture diagram">
   <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5e6661"/></marker></defs>
   <g font-size="11">
-    <rect x="10" y="20" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="45" text-anchor="middle" font-weight="700">Retailer phone</text><text x="85" y="62" text-anchor="middle" fill="#5e6661">PWA · Hindi / English</text>
-    <rect x="10" y="150" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="175" text-anchor="middle" font-weight="700">Order desk</text><text x="85" y="192" text-anchor="middle" fill="#5e6661">Desktop or phone</text>
+    <rect x="10" y="20" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="45" text-anchor="middle" font-weight="700">Retailer phone</text><text x="85" y="62" text-anchor="middle" fill="#5e6661">React SPA · PWA · हिंदी/EN</text>
+    <rect x="10" y="150" width="150" height="60" rx="8" fill="#e7f1ec" stroke="#1d6b4f"/><text x="85" y="175" text-anchor="middle" font-weight="700">Order desk</text><text x="85" y="192" text-anchor="middle" fill="#5e6661">React SPA · lazy chunk</text>
     <rect x="220" y="10" width="300" height="220" rx="10" fill="#fff" stroke="#c9ccc6"/>
-    <text x="370" y="30" text-anchor="middle" font-weight="700">Next.js 15 app (one deployable)</text>
-    <rect x="235" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="300" y="60" text-anchor="middle">Middleware</text><text x="300" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">role gate on routes</text>
-    <rect x="375" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="60" text-anchor="middle">Server components</text><text x="440" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">pages, scoped queries</text>
-    <rect x="235" y="96" width="270" height="40" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="370" y="114" text-anchor="middle">Server actions + /api/export</text><text x="370" y="128" text-anchor="middle" fill="#5e6661" font-size="9.5">zod validation · auth re-checked per call</text>
+    <text x="370" y="30" text-anchor="middle" font-weight="700">Node.js + Express (one deployable)</text>
+    <rect x="235" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="300" y="60" text-anchor="middle">Middleware</text><text x="300" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">helmet · origin · session</text>
+    <rect x="375" y="42" width="130" height="44" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="60" text-anchor="middle">Static SPA</text><text x="440" y="76" text-anchor="middle" fill="#5e6661" font-size="9.5">built by Vite</text>
+    <rect x="235" y="96" width="270" height="40" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="370" y="114" text-anchor="middle">REST routes /api/auth · /shop · /captures · /desk</text><text x="370" y="128" text-anchor="middle" fill="#5e6661" font-size="9.5">zod validation · role routers · shop-scoped queries</text>
     <rect x="235" y="146" width="130" height="74" rx="6" fill="#e7f1ec" stroke="#1d6b4f"/><text x="300" y="166" text-anchor="middle" font-weight="700">domain/ (pure)</text><text x="300" y="182" text-anchor="middle" font-size="9.5">pricing · schemes</text><text x="300" y="196" text-anchor="middle" font-size="9.5">capture parse/match</text><text x="300" y="210" text-anchor="middle" font-size="9.5">tally XML/CSV</text>
     <rect x="375" y="146" width="130" height="74" rx="6" fill="#f5f6f3" stroke="#e4e6e1"/><text x="440" y="166" text-anchor="middle" font-weight="700">server/</text><text x="440" y="182" text-anchor="middle" font-size="9.5">orders · credit · OTP</text><text x="440" y="196" text-anchor="middle" font-size="9.5">capture · export</text><text x="440" y="210" text-anchor="middle" font-size="9.5">LLM adapter</text>
     <rect x="580" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6"/><text x="645" y="54" text-anchor="middle" font-weight="700">PostgreSQL</text><text x="645" y="70" text-anchor="middle" fill="#5e6661">via Prisma</text>
@@ -103,18 +103,24 @@
     <rect x="580" y="164" width="130" height="56" rx="8" fill="#fff" stroke="#c9ccc6" stroke-dasharray="4 3"/><text x="645" y="186" text-anchor="middle" font-weight="700">SMS · WhatsApp · Tally</text><text x="645" y="204" text-anchor="middle" fill="#5e6661">mocked</text>
   </g>
   <g stroke="#5e6661" fill="none" marker-end="url(#a)"><path d="M160 50H232"/><path d="M160 180H232"/><path d="M522 58H578"/><path d="M522 125H578"/><path d="M522 192H578"/></g>
-  <text x="300" y="244" text-anchor="middle" font-size="9.5" fill="#1d6b4f">same pricing code runs in the cart on the phone</text>
+  <text x="300" y="244" text-anchor="middle" font-size="9.5" fill="#1d6b4f">shared/ also runs in the React cart on the phone</text>
 </svg>
 
 <h3>Why this shape</h3>
+<p><b>Stack: React + Vite (frontend), Node.js + Express (API), PostgreSQL (database), Prisma (ORM).</b> This is the client's chosen stack. Three folders, one TypeScript codebase, one deployable:</p>
+<pre>shared/   pure TypeScript used by both sides: scheme engine, capture reader, Tally writer, API types, i18n
+server/   Express API: routes → services → Prisma → PostgreSQL
+web/      React SPA built by Vite: pages, components, cart state</pre>
 <ul>
-  <li><b>One Next.js app, not an SPA plus a separate API.</b> Six weeks and ₹7 lakh buy one maintainable codebase, not two. Server components send finished HTML, which matters on slow 3G: the catalogue is readable before any JavaScript runs. Server actions remove a hand-written REST layer for the form-like flows here (place order, confirm capture, export).</li>
-  <li><b>A pure <code>domain/</code> layer.</b> The scheme engine, the capture reader and the Tally writer have no database, clock or network. That is what makes them testable with tables of cases, and it lets the <i>same</i> pricing code run in the cart on the phone (instant feedback with no round trip) and on the server (the authority when the order is placed).</li>
+  <li><b>One process in production.</b> Express serves <code>/api/*</code> and the built SPA from the same origin. Same origin means the session cookie needs no CORS, and there is one thing to deploy and monitor. In development Vite runs the SPA with hot reload and proxies <code>/api</code> to Express.</li>
+  <li><b>A pure <code>shared/</code> layer.</b> The scheme engine, capture reader and Tally writer have no database, clock or network. That makes them testable with tables of cases, and lets the <i>same</i> pricing code run in the React cart (instant feedback, no round trip on 3G) and in Express (the authority when the order is placed). <code>shared/api.ts</code> holds every request and response type, so the API and the React app can't drift apart without a compile error.</li>
+  <li><b>Thin routes, real services.</b> Routes validate input (zod), check the role and scope, call a service, and map the result to a DTO. Services hold the business rules (orders, credit, capture, OTP) and are tested directly against Postgres.</li>
   <li><b>PostgreSQL with row locks.</b> Stock and credit are shared, contended numbers. Order placement runs in one transaction that locks the retailer row (credit) and the product rows (stock) in a fixed order, then re-prices. A test races two orders for the last cases and checks only one wins.</li>
   <li><b>Prisma</b> for typed queries and migrations; raw SQL only for the two <code>FOR UPDATE</code> locks.</li>
-  <li><b>Hosting plan:</b> Vercel (Mumbai region functions) and a managed Postgres in Mumbai (Neon or Supabase). Both have free tiers that cover a pilot; latency to Jabalpur stays low. See <code>deployment.md</code>.</li>
+  <li><b>React Router</b> with the order desk lazy-loaded, so retailers' phones never download desk screens. No state library: server data comes from a small <code>useQuery</code> hook, and the cart is a React context persisted to localStorage.</li>
+  <li><b>Hosting plan:</b> one Node service (Render, Railway or a small VM in Mumbai) plus managed Postgres in Mumbai (Neon or Supabase). See <code>deployment.md</code>.</li>
 </ul>
-<p><b>Considered and rejected:</b> Firebase (weak for transactional stock and credit, and the reporting is relational); a React Native app (the brief asks for an installable web app, and low-end phones have little storage for another app); calling the LLM for everything including SKU matching (opaque confidence, cost per message, and no way to learn per-shop words without fine-tuning).</p>
+<p><b>Considered and rejected:</b> separate frontend and API hosts (CORS, two deployments, cross-site cookies for no gain at this size); Firebase (weak for transactional stock and credit, and the reporting is relational); a React Native app (the brief asks for an installable web app, and low-end phones have little storage for another app); calling the LLM for everything including SKU matching (opaque confidence, cost per message, and no way to learn per-shop words).</p>
 
 <h2>4. Data model</h2>
 <table>
@@ -138,7 +144,7 @@
   <li>Sign in with mobile and OTP. Session cookie: httpOnly, signed, 30 days for retailers (they order between customers and should not re-login daily), 12 hours for the desk.</li>
   <li>Catalogue shows his price per case, "+ GST %", price per pack, live scheme, and stock. "You order often" and "Repeat last order" sit on top; repeat skips anything now out of stock and says so.</li>
   <li>The cart lives on the phone (localStorage), so tapping + is instant and nothing is lost if the signal drops. It is priced by the shared engine: free cases, discounts, nudges, GST breakdown, and a warning if the total goes over available credit.</li>
-  <li>Place order sends only product ids, case counts, an idempotency key and the total the person saw. The server re-prices inside a locked transaction. If its total differs (price or stock changed), it refuses and the cart refreshes with a clear message instead of silently charging a different amount.</li>
+  <li><code>POST /api/shop/orders</code> sends only product ids, case counts, an idempotency key and the total the person saw. The server re-prices inside a locked transaction. If its total differs (price or stock changed), it refuses and the cart refreshes with a clear message instead of silently charging a different amount.</li>
   <li>Within credit → <span class="tag">CONFIRMED</span>; over credit → <span class="tag">CREDIT_HOLD</span> with the exact shortfall. Stock (paid + free) is reserved either way.</li>
 </ol>
 <h3>5.2 Message to order (the AI part)</h3>
@@ -146,13 +152,13 @@
   <li>The desk pastes a WhatsApp text and picks the shop (WhatsApp is mocked), or the retailer types the order in the app the way they would on WhatsApp.</li>
   <li>The reader splits lines, extracts quantity, unit and pack size, and matches each line to a SKU (§7). A <b>Capture</b> draft is saved.</li>
   <li>The review screen shows, per line: their words, the matched SKU with stock, a confidence label and %, why it matched, two alternatives, a full product picker, and the case-or-piece question where needed. A live preview prices the draft with the scheme engine, so the desk sees free goods and stock problems before confirming.</li>
-  <li>Confirm is blocked until every line is answered. The server enforces the same rules (the UI cannot skip them), creates the order through the same <code>placeOrder</code> path, marks the capture done and saves corrections as aliases, all in one transaction.</li>
+  <li>Confirm is blocked until every line is answered. <code>POST /api/captures/:id/confirm</code> enforces the same rules on the server (the UI cannot skip them), creates the order through the same <code>placeOrder</code> service, marks the capture done and saves corrections as aliases, all in one transaction.</li>
 </ol>
 <h3>5.3 Order desk</h3>
 <p>Inbox (oldest message first, credit holds, counts) → review → order page (release hold, reject with a reason the shop sees; rejecting returns stock) → Tally export (select confirmed orders, create a batch, download XML or CSV; a status-guarded update prevents two people exporting the same order) → van loading list by route (paid + free cases) → quiet shops (no order in 14 days, quietest first, tap to call).</p>
 
 <h2>6. The scheme engine (the hard part)</h2>
-<p><code>src/domain/pricing.ts</code> is pure and shared by phone and server. Rules, each covered by tests:</p>
+<p><code>shared/pricing.ts</code> is pure and shared by the React cart and the Express API. Rules, each covered by tests:</p>
 <table>
   <tr><th>Rule</th><th>Behaviour</th></tr>
   <tr><td>Case price</td><td>pack price × packs per case. Biscuit 75 g: ₹8.10 × 96 = <span class="num">₹777.60</span>; detergent 1 kg: ₹101.50 × 20 = <span class="num">₹2,030.00</span>; tea 250 g: ₹118 × 40 = <span class="num">₹4,720.00</span> (A-01).</td></tr>
@@ -200,18 +206,19 @@
 <p>Rules are free, instant, offline-capable, deterministic and explainable, and the brief's vocabulary is narrow (21 SKUs, a few dozen slang words). Their weakness is open-ended phrasing. An LLM is good at exactly that, but its confidence is not calibrated and it can't learn a shop's words. So the LLM is used only to <i>extract and normalise</i> lines (structured output against a schema), and the deterministic matcher still decides the SKU and the confidence.</p>
 
 <h3>7.5 The LLM path and its guardrails</h3>
-<p><code>src/server/llm.ts</code> uses the official Anthropic SDK with structured outputs (Zod schema), a 15 s timeout, one retry, low effort, and the catalogue terms in a cached system block. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=anthropic</code> and <code>ANTHROPIC_API_KEY</code>.</p>
+<p><code>server/src/services/llm.ts</code> uses the official Anthropic SDK with structured outputs (Zod schema), a 15 s timeout, one retry, low effort, and the catalogue terms in a cached system block. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=anthropic</code> and <code>ANTHROPIC_API_KEY</code>.</p>
 <div class="warn">Not verified against the live API: no key was available while building, so the demo and all tests use the rule reader. The code compiles against the SDK types and falls back safely, but the first job with a key is to run it on the seeded messages and real ones.</div>
 
 <h2>8. Security and privacy</h2>
 <ul>
-  <li><b>Access control in three layers.</b> Middleware gates <code>/shop</code> and <code>/desk</code> by role. Every page and server action re-reads the user from the database (so a deactivated user is out immediately). Every retailer query is scoped by <code>retailerId</code> from the session, never from the URL: another shop's order id simply returns 404. Tested for capture confirmation across shops.</li>
-  <li><b>OTP.</b> 6 random digits, HMAC-hashed, 5-minute expiry, 5 attempts counted atomically before comparing (parallel guesses can't exceed the limit), constant-time compare, 3 codes per 10 minutes and 30 s between sends. The response is the same for registered and unknown numbers, so the form can't reveal who is a customer.</li>
-  <li><b>Validation.</b> Zod on every server action and env var; case counts are whole numbers 1–999; message length capped; product ids checked to exist.</li>
-  <li><b>CSRF.</b> Next.js server actions reject cross-origin POSTs; session cookie is SameSite=Lax, httpOnly, Secure in production. The only GET with side effects is none: export downloads are read-only.</li>
-  <li><b>Output safety.</b> XML is escaped; CSV cells starting with <code>= + - @</code> are neutralised against spreadsheet formula injection.</li>
+  <li><b>Access control on the server, every request.</b> A middleware reads the signed session cookie and re-loads the user from the database, so a deactivated user is locked out at once. Each router checks the role (<code>/api/shop</code> retailer, <code>/api/desk</code> desk). Every retailer query is scoped by the shop id from the session, never from the URL: another shop's order id returns 404, so ids don't leak. The React route guards are only for navigation; the API is the gate. Covered by API tests.</li>
+  <li><b>OTP.</b> 6 random digits, HMAC-hashed, 5-minute expiry, 5 attempts counted atomically before comparing (parallel guesses can't exceed the limit), constant-time compare, 3 codes per number per 10 minutes, 30 s between sends, plus a per-IP limit. The response is identical for registered and unknown numbers, so the form can't reveal who is a customer.</li>
+  <li><b>Sessions.</b> HS256-signed token in an httpOnly, SameSite=Lax cookie (Secure in production); 30 days for retailers, 12 hours for the desk.</li>
+  <li><b>CSRF.</b> State-changing API calls must be JSON (blocks plain cross-site form posts) and come from the app's own origin or an allowed one. SameSite=Lax on top.</li>
+  <li><b>Validation.</b> zod on every request body, query and environment variable; case counts are whole numbers 1–999; message length capped; body size capped at 64 kB; product ids checked to exist.</li>
+  <li><b>Headers.</b> helmet with a strict Content-Security-Policy (scripts only from self, no frames), nosniff, referrer policy; <code>x-powered-by</code> off.</li>
+  <li><b>Output safety.</b> XML is escaped; CSV cells starting with <code>= + - @</code> are neutralised against spreadsheet formula injection. Errors return a generic message; details go to the server log only.</li>
   <li><b>Secrets.</b> None in the repository: <code>.env</code> is git-ignored, <code>.env.example</code> lists names only. No real personal data: all shops, people and phone numbers (90000 000xx) are invented.</li>
-  <li><b>Headers.</b> nosniff, frame-deny, strict referrer, permissions-policy; <code>x-powered-by</code> off.</li>
 </ul>
 
 <h2 class="page-break">9. UI and design decisions</h2>
@@ -229,20 +236,21 @@
 
 <h2>10. Performance on slow 3G</h2>
 <ul>
-  <li>Pages are server-rendered: HTML with prices arrives before JavaScript, and the catalogue is usable as it hydrates.</li>
-  <li>First-load JavaScript is 103–115 kB gzipped per route (most of it is React and Next.js itself); route-specific code is 0.2–3.3 kB.</li>
-  <li>No web fonts and no image requests: pack illustrations are inline SVG of about 600 bytes each, coloured by brand.</li>
-  <li>The cart is local, so adding cases costs no network at all. Service worker caches static assets for repeat visits and shows an offline page instead of the browser's error.</li>
-  <li><b>Estimate:</b> on Chrome's "Slow 3G" profile a cold first visit is roughly 2.5–3 s to usable; repeat visits are under 1.5 s with cached assets. <i>Not yet measured on a real low-end phone</i>; that is a pilot-week task.</li>
+  <li>Retailer bundle: <b>110 kB</b> JavaScript + 5.4 kB CSS, gzipped. Most of it is React, React DOM and React Router; the app's own code is small. Order desk screens are separate chunks (1–2 kB each) that retailers never download.</li>
+  <li>No web fonts and no image requests: pack illustrations are inline SVG of about 600 bytes each, coloured by brand. Static assets carry content hashes and a one-year cache; the service worker keeps them for repeat visits and shows an offline page instead of the browser's error.</li>
+  <li>The cart is local, so adding cases costs no network at all; the catalogue API response is one request of about 2.3 kB gzipped (9.8 kB raw). All responses are gzip-compressed by the server.</li>
+  <li>Skeletons shaped like the content appear immediately, so the screen is never blank while data loads.</li>
+  <li><b>Honest estimate:</b> on Chrome's "Slow 3G" profile, a <i>first ever</i> visit is about 3–3.5 s to a usable catalogue (a single-page app shows content after its JavaScript loads); repeat visits, which are almost all visits for a shop ordering every few days, are about 1–1.5 s from the cache. That misses the brief's "under 3 seconds" on the very first visit. The cheapest fixes, in order: swap React DOM for Preact (about −35 kB), and prerender the catalogue shell. Not yet measured on a real low-end phone; that is a pilot-week task.</li>
 </ul>
 
 <h2>11. Tests</h2>
-<p><b>91 tests</b> (Vitest), run in CI with Postgres:</p>
+<p><b>102 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
 <ul>
   <li><b>Scheme engine, 44:</b> the brief's three SKUs, every free-goods threshold and nudge, slab boundaries and unsorted slabs, competing schemes, validity edges, stock caps, invalid quantities, rounding, merging duplicates, credit maths.</li>
   <li><b>Capture reader, 31:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered.</li>
   <li><b>Tally export, 7:</b> XML escaping, India date, actual vs billed quantity, debit = credits balance, CGST/SGST split, CSV quoting and formula neutralising.</li>
-  <li><b>Database integration, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock, capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
+  <li><b>Services against Postgres, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock; capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
+  <li><b>HTTP API, 11:</b> no session → 401; retailer → desk endpoints 403; another shop's order → 404; deactivated user and tampered token locked out; desk can read any order; cross-origin write → 403; form-encoded write → 415; validation messages; bad quantities rejected; unknown phone gets the same answer as a known one.</li>
 </ul>
 
 <h2>12. Assumptions</h2>
@@ -290,7 +298,7 @@
   <li>Salesman mode: offline catalogue and order queue, sync with server-side re-pricing (the engine already supports it).</li>
   <li>Scheme and price admin for the office, with a preview using the same engine.</li>
   <li>Tally sync for stock and outstanding (ODBC/XML), replacing the mocked snapshots.</li>
-  <li>Measure on a real low-end phone on 3G; rate limiting at the edge; error monitoring.</li>
+  <li>Measure on a real low-end phone on 3G; Preact and a prerendered shell if the first visit is over 3 s; error monitoring.</li>
 </ol>
 </div>
 </div>
