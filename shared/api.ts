@@ -22,7 +22,15 @@ export type Me = {
 };
 
 export type DemoAccount = { phone: string; who: string; role: string };
-export type AppConfig = { demoMode: boolean; demoAccounts: DemoAccount[]; aiReader: string };
+export type AppConfig = {
+  demoMode: boolean;
+  demoAccounts: DemoAccount[];
+  aiReader: string;
+  /** Photo and voice-note capture need the AI reader (a Gemini key). */
+  mediaCapture: boolean;
+};
+
+export type CaptureSource = "TEXT" | "PHOTO" | "VOICE";
 
 export type OtpRequestResult = { ok: true; demoCode?: string } | { ok: false; reason: "rate_limited" | "too_soon"; retryInSeconds: number };
 
@@ -107,6 +115,8 @@ export type CaptureView = {
   parser: string;
   parserNote: string | null;
   channel: "WHATSAPP_TEXT" | "APP_TEXT";
+  source: CaptureSource;
+  hasMedia: boolean;
   createdAt: string;
   createdBy: string;
   retailer: { id: string; shopName: string; code: string; area: string };
@@ -119,6 +129,7 @@ export type CaptureSummary = {
   createdAt: string;
   rawText: string;
   channel: "WHATSAPP_TEXT" | "APP_TEXT";
+  source: CaptureSource;
   retailer: { shopName: string; area: string };
   lineCount: number;
   needsAttention: number;

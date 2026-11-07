@@ -5,12 +5,15 @@ import { useQuery } from "../../lib/useQuery";
 import { useShop } from "./ShopLayout";
 import { dict } from "../../../../shared/i18n";
 import { ago } from "../../../../shared/dates";
+import { MediaCapture } from "../../components/MediaCapture";
+import type { AppConfig } from "../../../../shared/api";
 
 export function TypeOrderPage() {
   const { lang } = useShop();
   const t = dict[lang];
   const navigate = useNavigate();
   const drafts = useQuery<{ id: string; rawText: string; createdAt: string }[]>("/shop/captures");
+  const config = useQuery<AppConfig>("/config");
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,6 +40,9 @@ export function TypeOrderPage() {
         {error && <p id="text-error" role="alert" className="text-sm text-[var(--color-danger)]">{error}</p>}
         <button className="btn btn-primary w-full" disabled={busy || text.trim().length < 3}>{busy ? t.reading : t.readOrder}</button>
       </form>
+      <div className="mt-6">
+        <MediaCapture lang={lang} enabled={!!config.data?.mediaCapture} onCreated={(id) => navigate(`/shop/capture/${id}`)} />
+      </div>
       {drafts.data && drafts.data.length > 0 && (
         <section className="mt-6">
           <h2 className="mb-2 text-sm font-semibold text-[var(--color-muted)]">{lang === "hi" ? "अधूरे ऑर्डर" : "Not confirmed yet"}</h2>

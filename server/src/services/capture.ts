@@ -6,6 +6,8 @@ import { matchWithAi, confidenceLevel, type CatalogueEntry } from "../../../shar
 import { catalogueFor, orderHistory } from "./catalogue";
 import { extractWithLlm } from "./llm";
 import { placeOrder, type PlaceOrderResult } from "./orders";
+import type { MediaKind } from "./media";
+import { transcribeMedia } from "./transcribe";
 
 export const MAX_MESSAGE_CHARS = 2000;
 
@@ -24,7 +26,14 @@ async function extract(text: string, catalogue: CatalogueEntry[]): Promise<{ lin
   }
 }
 
-export async function createCapture(input: { actorId: string; retailerId: string; text: string; channel: CaptureChannel }) {
+/** A transcript can mishear "do" (2) as "dus" (10): every line read from a photo or voice note needs a tick. */
+export const MEDIA_CONFIDENCE_CAP = 79;
+/** A line the transcriber marked [unclear] is shown as low, never auto-accepted. */
+export const UNCLEAR_CONFIDENCE_CAP = 40;
+
+type MediaInput = { kind: MediaKind; mimeType: string; bytes: Uint8Array };
+
+export async function createCapture(input: { actorId: string; retailerId: string; text: string; channel: CaptureChannel; media?: MediaInput; note?: string }) {
   const [items, history, aliases] = await Promise.all([
     catalogueFor(input.retailerId),
     orderHistory(input.retailerId),
@@ -39,12 +48,19 @@ export async function createCapture(input: { actorId: string; retailerId: string
       retailerId: input.retailerId,
       createdById: input.actorId,
       channel: input.channel,
+      source: input.media?.kind ?? "TEXT",
       rawText: input.text,
-      parser,
-      parserNote: note,
+      parser: input.media ? `${input.media.kind === "PHOTO" ? "photo" : "voice"}→llm:${env.llmModel} · ${parser}` : parser,
+      parserNote: [input.note, note].filter(Boolean).join(" ") || null,
+      media: input.media
+        ? { create: { mimeType: input.media.mimeType, sizeBytes: input.media.bytes.length, bytes: Buffer.from(input.media.bytes) } }
+        : undefined,
       lines: {
         create: lines.slice(0, 40).map((l, position) => {
           const m = matchWithAi(l, ctx);
+          let confidence = m.confidence;
+          if (input.media) confidence = Math.min(confidence, MEDIA_CONFIDENCE_CAP);
+          if (/\[unclear\]/i.test(l.raw)) confidence = Math.min(confidence, UNCLEAR_CONFIDENCE_CAP);
           return {
             position,
             rawText: l.raw.slice(0, 300),
@@ -52,7 +68,7 @@ export async function createCapture(input: { actorId: string; retailerId: string
             qty: l.qty,
             unit: l.unit,
             productId: m.productId,
-            confidence: m.confidence,
+            confidence,
             matchedBy: m.matchedBy,
             alternatives: m.alternatives as unknown as Prisma.InputJsonValue,
           };
@@ -61,6 +77,23 @@ export async function createCapture(input: { actorId: string; retailerId: string
     },
   });
   return capture.id;
+}
+
+export class MediaNeedsAi extends Error {}
+
+/**
+ * Photo of a list or a voice note: Gemini writes down what is there, then the transcript goes
+ * through the same reader and matcher as a typed order. The original file is kept for checking.
+ */
+export async function createMediaCapture(input: { actorId: string; retailerId: string; channel: CaptureChannel; media: MediaInput }) {
+  if (!env.llmEnabled) throw new MediaNeedsAi("Reading photos and voice notes needs the AI reader. Type the order instead.");
+  const lines = await transcribeMedia(input.media.kind, input.media.mimeType, input.media.bytes);
+  const what = input.media.kind === "PHOTO" ? "photo" : "voice note";
+  return createCapture({
+    ...input,
+    text: lines.join("\n"),
+    note: `Transcribed by AI from a ${what}: check each line against the ${what}.`,
+  });
 }
 
 export type ReviewedLine = {
@@ -116,7 +149,9 @@ export async function confirmCapture(input: { actorId: string; captureId: string
     if (confidenceLevel(line.confidence) !== "high" && !changedProduct && !r.checked) problems.push({ lineId: line.id, problem: "unchecked" });
     if (r.productId && r.cases && validIds.has(r.productId)) {
       items.push({ productId: r.productId, cases: r.cases });
-      if (changedProduct && !r.substituted && line.phrase) corrections.push({ phrase: line.phrase, productId: r.productId });
+      // Only learn from the shop's own typed words. A photo or voice transcript can be misread
+      // ("surf" heard as "salt"); learning "salt → detergent" would poison the next real salt order.
+      if (changedProduct && !r.substituted && line.phrase && capture.source === "TEXT") corrections.push({ phrase: line.phrase, productId: r.productId });
     }
   }
 

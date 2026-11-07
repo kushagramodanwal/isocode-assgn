@@ -21,7 +21,9 @@ function csrfGuard(req: Request, _res: Response, next: NextFunction) {
   const origin = req.get("origin");
   const sameHost = origin && new URL(origin).host === req.get("host");
   if (origin && !sameHost && !env.allowedOrigins.includes(origin)) return next(new HttpError(403, "bad_origin", "Request origin not allowed"));
-  if (!req.is("application/json")) return next(new HttpError(415, "json_required", "Send JSON"));
+  // JSON everywhere, except the one upload endpoint, which takes a photo or voice note as-is.
+  const isUpload = req.path === "/captures/media" && !!req.is(["image/*", "audio/*"]);
+  if (!req.is("application/json") && !isUpload) return next(new HttpError(415, "json_required", "Send JSON"));
   next();
 }
 
@@ -36,7 +38,8 @@ export function createApp() {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:"],
+          imgSrc: ["'self'", "data:", "blob:"],
+          mediaSrc: ["'self'", "blob:"],
           connectSrc: ["'self'"],
           frameAncestors: ["'none'"],
         },

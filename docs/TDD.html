@@ -68,7 +68,7 @@
 <h3>Honest limits</h3>
 <ul>
   <li><b>The AI reader is Google Gemini on the free tier</b> (5 requests a minute). It is tested live on the sample messages only (§7.5); with no key, or when Google is busy, the app uses the rule-based reader.</li>
-  <li>Photos and voice notes are not captured. Text only.</li>
+  <li>Photos of lists and Hindi voice notes are read by Gemini and tested with generated files only, not yet with real handwriting or a real voice in a noisy shop (§7.6).</li>
   <li>Salesman offline mode is not built. The app is installable and survives a dropped signal (cart on the phone, offline page), but cannot place orders offline.</li>
   <li>SMS, WhatsApp and Tally are mocked as the brief says: OTP shown on screen, messages pasted by the desk, Tally gets a file.</li>
   <li>Not deployed at time of writing unless a live URL is shown above.</li>
@@ -149,7 +149,7 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 </ol>
 <h3>5.2 Message to order (the AI part)</h3>
 <ol>
-  <li>The desk pastes a WhatsApp text and picks the shop (WhatsApp is mocked), or the retailer types the order in the app the way they would on WhatsApp.</li>
+  <li>The desk pastes a WhatsApp text, adds a photo of a list or a voice note, and picks the shop (WhatsApp is mocked). Or the retailer types the order, photographs their list, or records a voice note in the app.</li>
   <li>The reader splits lines, extracts quantity, unit and pack size, and matches each line to a SKU (§7). A <b>Capture</b> draft is saved.</li>
   <li>The review screen shows, per line: their words, the matched SKU with stock, a confidence label and %, why it matched, two alternatives, a full product picker, and the case-or-piece question where needed. A live preview prices the draft with the scheme engine, so the desk sees free goods and stock problems before confirming.</li>
   <li>Confirm is blocked until every line is answered. <code>POST /api/captures/:id/confirm</code> enforces the same rules on the server (the UI cannot skip them), creates the order through the same <code>placeOrder</code> service, marks the capture done and saves corrections as aliases, all in one transaction.</li>
@@ -199,8 +199,16 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
   <tr><td>LLM fails, times out or returns bad output</td><td>Falls back to the rule reader; the review screen says so. The desk still gets a draft.</td></tr>
 </table>
 
-<h3>7.3 Measured on the sample messages</h3>
-<p>The brief's message <i>"bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti"</i> gives 3 lines, all units read as cases, all three SKUs correct and "Sure" (93%, 100%, 100%). Across the 4 seeded messages (14 lines, Hinglish, Devanagari, numbered lists, missing units): every SKU correct; 3 lines correctly ask case-or-piece; 1 ambiguous "biscuit 5" correctly drops to "Check · 71%" and is resolved by history; the learned alias "lal wala sabun" matches at 97%. This is a small, hand-made set. Real accuracy has to be measured on the client's real messages (§11).</p>
+<h3>7.3 Measured on a labelled evaluation set</h3>
+<p>To judge matching on a realistic catalogue rather than an easy one, 22 deliberate look-alikes were added (43 SKUs): more pack sizes of the same product, milk vs glucose vs cream biscuits, tea leaf vs tea dust 1 kg, rock vs iodised salt, liquid detergent vs dishwash liquid, two neem soaps. <code>shared/capture/eval</code> holds 30 messages typed the way shops type (no commas, Hinglish, Devanagari, typos, brand slang, missing units, a product we don't sell), with 49 lines labelled the way a careful desk clerk would decide. <code>npm run eval</code> scores it; a test fails the build if the rule reader drops below the floor.</p>
+<table>
+  <tr><th>Reader</th><th>Right SKU</th><th>Qty / unit</th><th>Wrong but "Sure"</th><th>Auto-accepted</th><th>Ambiguous handled</th></tr>
+  <tr><td>Rules, first run</td><td class="num">83.7%</td><td class="num">93.9% / 93.9%</td><td class="num">0</td><td class="num">79.6%</td><td class="num">7/7</td></tr>
+  <tr><td>Rules, after fixes, no shop history</td><td class="num">91.8%</td><td class="num">100% / 100%</td><td class="num">0</td><td class="num">79.6%</td><td class="num">7/7</td></tr>
+  <tr><td>Rules, after fixes, with shop history</td><td class="num">95.9%</td><td class="num">100% / 100%</td><td class="num">0</td><td class="num">91.8%</td><td class="num">7/7</td></tr>
+  <tr><td>Gemini + guardrails, with history</td><td class="num"><b>98%</b></td><td class="num">100% / 100%</td><td class="num">0</td><td class="num">91.8%</td><td class="num">7/7</td></tr>
+</table>
+<p>The first run's misses had general causes, fixed as rules rather than per-message patches: messages without commas are cut at each "number + peti"; a longer, different word is no longer a prefix match ("rocket" had matched rock salt); "4 pack wala" is read as a description, not the order; Devanagari size words (बड़ा) count like "bada". What the rules still miss is brand slang ("maggi" for noodles, "vim" for a dishwash bar), shown as <i>low</i> so the desk is asked. Gemini fixed exactly those two; its only miss was suggesting noodles for "rocket", which the guardrails labelled an AI suggestion at <i>medium</i>. "Dangerous" errors (a wrong product shown as "Sure", which a busy desk would wave through) stayed at zero in every run. The set is small and hand-written; the next step is to label 200 real WhatsApp orders from the client.</p>
 
 <h3>7.4 Why rules first, LLM optional</h3>
 <p>Rules are free, instant, offline-capable, deterministic and explainable, and the vocabulary is narrow (43 SKUs, a few dozen slang words). Their weakness is open-ended phrasing. An LLM is good at exactly that, but its confidence is not calibrated and it can't learn a shop's words. So the LLM is used only to <i>extract and normalise</i> lines (structured output against a schema), and the deterministic matcher still decides the SKU and the confidence.</p>
@@ -216,7 +224,18 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
   <tr><td>Said "CASE" for "10 dabba"</td><td>A guessed unit</td><td>The unit always comes from the shop's words; "dabba" stays a question.</td></tr>
 </table>
 <p><b>Measured</b> (free tier, 4 sample messages, 14 lines): same SKU, quantity and unit as the rule reader on every line; clear lines rise from 85% to 95%; "biscuit 5" stays <i>medium 73%</i> and "lal wala sabun" <i>low 36%</i>, so both still need a person; 1.7–4.6 s per message. Larger "flash" models took 12–15 s or more and were often overloaded (503), so the lite model is the default. <code>npm run ai:check</code> repeats this comparison.</p>
-<div class="warn">Free-tier limits: 5 requests per minute per model, occasional 503s, and Google may use free-tier prompts to improve its products. Fine for a demo; the pilot needs a paid key (about 600 messages a day), and the fallback to rules means a quota hit never stops the desk. On this small set Gemini adds confidence but no new correct answers: its value has to be shown on real, messier messages before it is worth the cost.</div>
+<div class="warn">Free-tier limits: 5 requests per minute per model, occasional 503s, and Google may use free-tier prompts to improve its products. Fine for a demo; the pilot needs a paid key (about 600 messages a day), and the fallback to rules means a quota hit never stops the desk. On the evaluation set Gemini's gain is real but narrow (brand slang); its value should be confirmed on the client's real messages before paying for it at scale.</div>
+
+<h3>7.6 Photos of lists and Hindi voice notes</h3>
+<p>Photos and voice notes need an AI that reads images and audio, so they use Gemini; without a key the buttons explain that and point to typing. The flow reuses everything above:</p>
+<ol>
+  <li><b>On the phone:</b> a photo is scaled to 1600 px JPEG (a 4 MB camera photo becomes about 250 kB on 3G); a voice note is recorded in the app (up to 90 s) and converted to 16 kHz mono WAV, a format every browser can produce and Gemini always reads. The desk can also upload a forwarded WhatsApp voice note (.ogg/.opus, .m4a, .mp3).</li>
+  <li><b>Upload:</b> the raw file goes to <code>POST /api/captures/media</code>. The server checks the type against an allow-list, caps it at 8 MB, and sniffs the first bytes so a file can't pretend to be a photo.</li>
+  <li><b>Transcribe, don't interpret:</b> Gemini writes down what is on the list or in the note, one item per line, in the original script (spoken Hindi as Roman Hinglish), with numbers as digits. It may not translate, correct or add, and writes <code>[unclear]</code> instead of guessing. Something that isn't an order (a selfie, silence) is refused.</li>
+  <li><b>Same reader, stricter rules:</b> the transcript goes through the same reader, matcher and guardrails as a typed message. Because a transcript can mishear "do" (2) as "dus" (10), every line from a photo or voice note is capped at <i>check</i> (79%), so a person ticks each one, and an <code>[unclear]</code> line is <i>low</i>. The review screen shows the photo, or plays the voice note, above the transcript.</li>
+  <li><b>No learning from transcripts:</b> corrections on a photo or voice capture are not saved as the shop's words, because those words came from the AI, not the shop.</li>
+</ol>
+<p><b>Measured live</b> (free tier, files generated for the test: a photo of a five-item list in a handwriting font, Roman and Devanagari mixed; a Hindi voice note spoken by macOS's Hindi voice): the photo was transcribed exactly in 2.8–4.9 s end to end, all five SKUs matched, and "24 pkt" correctly stayed pieces. The voice note took 3.3–3.9 s; on one run Gemini heard "सर्फ" (surf) correctly, on another it heard "salt". That is the case the 79% cap, the playable original and the no-learning rule exist for. Not yet tested: real handwriting on a real phone camera, a real person's voice with shop noise, and in-app recording on a phone (the test browser has no microphone; its "microphone blocked" message was checked).</p>
 
 <h2>8. Security and privacy</h2>
 <ul>
@@ -224,7 +243,8 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
   <li><b>OTP.</b> 6 random digits, HMAC-hashed, 5-minute expiry, 5 attempts counted atomically before comparing (parallel guesses can't exceed the limit), constant-time compare, 3 codes per number per 10 minutes, 30 s between sends, plus a per-IP limit. The response is identical for registered and unknown numbers, so the form can't reveal who is a customer.</li>
   <li><b>Sessions.</b> HS256-signed token in an httpOnly, SameSite=Lax cookie (Secure in production); 30 days for retailers, 12 hours for the desk.</li>
   <li><b>CSRF.</b> State-changing API calls must be JSON (blocks plain cross-site form posts) and come from the app's own origin or an allowed one. SameSite=Lax on top.</li>
-  <li><b>Validation.</b> zod on every request body, query and environment variable; case counts are whole numbers 1–999; message length capped; body size capped at 64 kB; product ids checked to exist.</li>
+  <li><b>Validation.</b> zod on every request body, query and environment variable; case counts are whole numbers 1–999; message length capped; JSON bodies capped at 64 kB; product ids checked to exist.</li>
+  <li><b>Uploads.</b> Photos and voice notes only (allow-list), 8 MB at most, and the file's first bytes must match its declared type. Files are stored in the database, served only to that shop and the desk, never executed, and sent to Gemini only when the AI reader is on.</li>
   <li><b>Headers.</b> helmet with a strict Content-Security-Policy (scripts only from self, no frames), nosniff, referrer policy; <code>x-powered-by</code> off.</li>
   <li><b>Output safety.</b> XML is escaped; CSV cells starting with <code>= + - @</code> are neutralised against spreadsheet formula injection. Errors return a generic message; details go to the server log only.</li>
   <li><b>Secrets.</b> None in the repository: <code>.env</code> is git-ignored, <code>.env.example</code> lists names only. No real personal data: all shops, people and phone numbers (90000 000xx) are invented.</li>
@@ -253,14 +273,15 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 </ul>
 
 <h2>11. Tests</h2>
-<p><b>126 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
+<p><b>149 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
 <ul>
   <li><b>Scheme engine, 44:</b> the brief's three SKUs, every free-goods threshold and nudge, slab boundaries and unsorted slabs, competing schemes, validity edges, stock caps, invalid quantities, rounding, merging duplicates, credit maths.</li>
-  <li><b>Capture reader, 37:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, list numbering, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered; AI words can lift confidence by at most 15 points, an AI-only pick is capped at medium, and a shop alias beats the AI.</li>
+  <li><b>Capture reader, 46:</b> including the evaluation-set quality floor (0 dangerous errors, 100% qty and unit, ≥95% SKU); the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, list numbering, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered; AI words can lift confidence by at most 15 points, an AI-only pick is capped at medium, and a shop alias beats the AI.</li>
   <li><b>Tally export, 7:</b> XML escaping, India date, actual vs billed quantity, debit = credits balance, CGST/SGST split, CSV quoting and formula neutralising.</li>
+  <li><b>Photo/voice uploads, 10:</b> type sniffing (an HTML page sent as a JPEG is refused), size and allow-list; a photo capture stores the file, caps every line at <i>check</i>, marks <code>[unclear]</code> lines low, and learns no aliases from corrections.</li>
   <li><b>Services against Postgres, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock; capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
   <li><b>Gemini adapter (mocked), 18:</b> a good answer becomes lines; not-JSON, wrong shape, cut off, safety stop, blocked prompt, network error and timeout all fall back; one retry on 503 but none on a quota error; the model never decides the unit; a quantity disagreement empties the field; an invented pack size is ignored.</li>
-  <li><b>HTTP API, 11:</b> no session → 401; retailer → desk endpoints 403; another shop's order → 404; deactivated user and tampered token locked out; desk can read any order; cross-origin write → 403; form-encoded write → 415; validation messages; bad quantities rejected; unknown phone gets the same answer as a known one.</li>
+  <li><b>HTTP API, 15:</b> including uploads (503 when the AI reader is off, 400 for a disguised file, 415 for other types, another shop can't fetch a shop's photo); no session → 401; retailer → desk endpoints 403; another shop's order → 404; deactivated user and tampered token locked out; desk can read any order; cross-origin write → 403; form-encoded write → 415; validation messages; bad quantities rejected; unknown phone gets the same answer as a known one.</li>
 </ul>
 
 <h2>12. Assumptions</h2>
@@ -292,7 +313,6 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 <div>
 <h3>Cut, on purpose</h3>
 <ul>
-  <li><b>Photo and Hindi voice-note capture.</b> Same review screen; needs a vision/speech step before extraction. Cut to make text capture solid first.</li>
   <li><b>Salesman mode and offline ordering.</b> Needs a local queue (IndexedDB), conflict rules for stock and credit, and a sync screen. Too risky to do badly.</li>
   <li><b>Real SMS, WhatsApp and Tally integration</b> (mocked, per the brief).</li>
   <li><b>Admin screens</b> for products, prices, schemes and users (seeded instead).</li>
@@ -304,7 +324,7 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 <ol>
   <li>Turn on Gemini with a key; build an evaluation set from 200 real WhatsApp orders; tune thresholds on it and track accuracy weekly.</li>
   <li>WhatsApp Business API inbound webhook, so messages arrive in the inbox by themselves, matched to the shop by number.</li>
-  <li>Photos of handwritten lists and Hindi voice notes into the same pipeline.</li>
+  <li>Test photo and voice capture with 50 real lists and voice notes from shops; measure mishearing of numbers and tune the prompt.</li>
   <li>Salesman mode: offline catalogue and order queue, sync with server-side re-pricing (the engine already supports it).</li>
   <li>Scheme and price admin for the office, with a preview using the same engine.</li>
   <li>Tally sync for stock and outstanding (ODBC/XML), replacing the mocked snapshots.</li>

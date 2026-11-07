@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiFailure } from "../../lib/api";
 import { useQuery } from "../../lib/useQuery";
+import { MediaCapture } from "../../components/MediaCapture";
+import type { AppConfig } from "../../../../shared/api";
 
 type R = { id: string; shopName: string; area: string; phone: string; code: string };
 
 export function NewCapturePage() {
   const navigate = useNavigate();
   const retailers = useQuery<R[]>("/desk/retailers");
+  const config = useQuery<AppConfig>("/config");
   const [retailerId, setRetailerId] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +30,8 @@ export function NewCapturePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-lg font-bold">Paste a WhatsApp order</h1>
-      <p className="mb-4 text-sm text-[var(--color-muted)]">Text messages only for now. The reader drafts the lines; nothing is ordered until you confirm.</p>
+      <h1 className="text-lg font-bold">Add a WhatsApp order</h1>
+      <p className="mb-4 text-sm text-[var(--color-muted)]">Paste the text, or add the photo of a list or a voice note. The reader drafts the lines; nothing is ordered until you confirm.</p>
       <form className="card space-y-4 p-5" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <div>
           <label htmlFor="retailerId" className="label">Shop (matched from the sender&apos;s number)</label>
@@ -44,6 +47,9 @@ export function NewCapturePage() {
         {error && <p role="alert" className="text-sm text-[var(--color-danger)]">{error}</p>}
         <button className="btn btn-primary w-full" disabled={busy || !retailerId || text.trim().length < 3}>{busy ? "Reading the message…" : "Read message"}</button>
       </form>
+      <div className="card mt-4 p-5">
+        <MediaCapture lang="en" enabled={!!config.data?.mediaCapture} retailerId={retailerId} allowAudioFile onCreated={(id) => navigate(`/desk/capture/${id}`)} />
+      </div>
     </div>
   );
 }

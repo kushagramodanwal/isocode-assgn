@@ -208,7 +208,8 @@ model Capture {
   createdById String
   createdBy   User           @relation(fields: [createdById], references: [id])
   channel     CaptureChannel
-  rawText     String
+  source      CaptureSource  @default(TEXT)
+  rawText     String // for a photo or voice note: the AI transcript the lines were read from
   parser      String // "rules" or "llm:<model>"
   parserNote  String? // why the parser fell back, if it did
   status      CaptureStatus  @default(NEEDS_REVIEW)
@@ -217,8 +218,24 @@ model Capture {
   createdAt   DateTime       @default(now())
 
   lines CaptureLine[]
+  media CaptureMedia?
 
   @@index([status, createdAt])
+}
+
+enum CaptureSource {
+  TEXT
+  PHOTO // photo of a handwritten list
+  VOICE // voice note, usually Hindi
+}
+
+/** The original photo or voice note, kept so a person can check the transcript against it. */
+model CaptureMedia {
+  captureId String  @id
+  capture   Capture @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  mimeType  String
+  sizeBytes Int
+  bytes     Bytes
 }
 
 enum CaptureUnit {

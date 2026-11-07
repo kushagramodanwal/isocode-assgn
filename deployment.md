@@ -52,6 +52,8 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
    GEMINI_API_KEY=<your key>
    ```
 
+   Gemini also turns on **photo of a list** and **voice note** capture (without a key those buttons explain they need it). Recording a voice note in the browser needs HTTPS (or localhost).
+
    The free tier allows 5 requests a minute and is sometimes busy; whenever Gemini can't answer, the app falls back to the rule-based reader by itself. Compare Gemini with the rule-based reader on the four sample messages (takes about a minute; calls are paced):
 
    ```bash
@@ -82,7 +84,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
 npm test
 ```
 
-Runs 126 tests (no Gemini key needed: the AI adapter is tested with a mocked SDK). The 20 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
+Runs 149 tests (no Gemini key needed: the AI adapter is tested with a mocked SDK). The 25 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy

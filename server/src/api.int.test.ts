@@ -106,3 +106,42 @@ describe.skipIf(!run)("API request guards", () => {
     expect(unknown.body).toEqual({ ok: true });
   });
 });
+
+describe.skipIf(!run)("photo / voice upload endpoint", () => {
+  const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...new Array(32).fill(1)]);
+
+  it("tells the user plainly when the AI reader is off (tests run without a key)", async () => {
+    const a = await shopWithUser();
+    const res = await request(app).post("/api/captures/media").set("Cookie", await cookieFor(a.user)).set("Content-Type", "image/jpeg").send(JPEG);
+    expect(res.status).toBe(503);
+    expect(res.body.message).toMatch(/Type the order instead/);
+  });
+
+  it("rejects a file that isn't what it claims, before any AI call", async () => {
+    const a = await shopWithUser();
+    const res = await request(app).post("/api/captures/media").set("Cookie", await cookieFor(a.user)).set("Content-Type", "image/jpeg").send(Buffer.from("<!doctype html><script>alert(1)</script>"));
+    expect(res.status).toBe(400);
+  });
+
+  it("needs a session, and refuses other upload types", async () => {
+    expect((await request(app).post("/api/captures/media").set("Content-Type", "image/jpeg").send(JPEG)).status).toBe(401);
+    const a = await shopWithUser();
+    const res = await request(app).post("/api/captures/media").set("Cookie", await cookieFor(a.user)).set("Content-Type", "application/pdf").send(Buffer.from("%PDF-1.4"));
+    expect(res.status).toBe(415);
+  });
+
+  it("another shop cannot fetch a shop's photo; the desk can", async () => {
+    const a = await shopWithUser();
+    const b = await shopWithUser();
+    const cap = await db.capture.create({
+      data: { retailerId: a.retailer.id, createdById: a.user.id, channel: "APP_TEXT", source: "PHOTO", rawText: "x", parser: "test", media: { create: { mimeType: "image/jpeg", sizeBytes: JPEG.length, bytes: JPEG } } },
+    });
+    expect((await request(app).get(`/api/captures/${cap.id}/media`).set("Cookie", await cookieFor(a.user))).status).toBe(200);
+    expect((await request(app).get(`/api/captures/${cap.id}/media`).set("Cookie", await cookieFor(b.user))).status).toBe(404);
+    const desk = await db.user.create({ data: { phone: phone(), name: "Desk", role: "DESK" } });
+    const res = await request(app).get(`/api/captures/${cap.id}/media`).set("Cookie", await cookieFor(desk));
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toBe("image/jpeg");
+  });
+});
+

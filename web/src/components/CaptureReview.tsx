@@ -24,7 +24,7 @@ type Line = {
 type Props = {
   lang: Lang;
   role: "DESK" | "RETAILER";
-  capture: Pick<CaptureView, "id" | "rawText" | "parser" | "parserNote" | "status" | "lines">;
+  capture: Pick<CaptureView, "id" | "rawText" | "parser" | "parserNote" | "status" | "lines" | "source" | "hasMedia">;
   catalogue: CatalogueItem[];
 };
 
@@ -40,7 +40,10 @@ type State = {
 type Strings = typeof en;
 const en = {
     original: "Message",
-    readBy: (p: string): string => (p === "rules" ? "Read by the rule-based reader" : `Read by AI (${p.replace("llm:", "")})`),
+    transcript: "What the AI read",
+    photo: "Their photo",
+    voice: "Their voice note",
+    readBy: (p: string): string => (p === "rules" ? "Read by the rule-based reader" : p.includes("→") ? "Transcribed and read by AI" : `Read by AI (${p.replace("llm:", "")})`),
     theyWrote: "Their words",
     confidence: { high: "Sure", medium: "Check", low: "Unsure" } as Record<ConfidenceLevel, string>,
     why: { alias: "Learned from an earlier correction for this shop", history: "Picked from this shop's past orders", catalogue: "Matched by product name", ai: "Suggested by the AI reader: their words alone don't say this, so check it", none: "No product matched these words" } as Record<string, string>,
@@ -76,7 +79,10 @@ const en = {
 };
 const hi: Strings = {
     original: "मैसेज",
-    readBy: (p: string): string => (p === "rules" ? "नियम-आधारित रीडर ने पढ़ा" : `AI ने पढ़ा (${p.replace("llm:", "")})`),
+    transcript: "AI ने यह पढ़ा",
+    photo: "आपकी फ़ोटो",
+    voice: "आपका वॉइस नोट",
+    readBy: (p: string): string => (p === "rules" ? "नियम-आधारित रीडर ने पढ़ा" : p.includes("→") ? "AI ने सुनकर/देखकर पढ़ा" : `AI ने पढ़ा (${p.replace("llm:", "")})`),
     theyWrote: "आपके शब्द",
     confidence: { high: "पक्का", medium: "जाँचें", low: "पक्का नहीं" } as Record<ConfidenceLevel, string>,
     why: { alias: "पिछले सुधार से सीखा", history: "आपके पिछले ऑर्डर से", catalogue: "नाम से मिलाया", ai: "AI का सुझाव: जाँच लें", none: "कोई सामान नहीं मिला" } as Record<string, string>,
@@ -186,9 +192,22 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
 
   return (
     <div className="space-y-4">
+      {capture.hasMedia && (
+        <section className="card p-4">
+          <h2 className="mb-2 text-sm font-semibold text-[var(--color-muted)]">{capture.source === "PHOTO" ? s.photo : s.voice}</h2>
+          {capture.source === "PHOTO" ? (
+            <a href={`/api/captures/${capture.id}/media`} target="_blank" rel="noreferrer">
+              <img src={`/api/captures/${capture.id}/media`} alt={s.photo} className="max-h-[28rem] w-full rounded-lg bg-[var(--color-bg)] object-contain" />
+            </a>
+          ) : (
+            <audio src={`/api/captures/${capture.id}/media`} controls preload="metadata" className="w-full" />
+          )}
+        </section>
+      )}
+
       <section className="card p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-[var(--color-muted)]">{s.original}</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-muted)]">{capture.hasMedia ? s.transcript : s.original}</h2>
           <span className="text-xs text-[var(--color-faint)]">{s.readBy(capture.parser)}</span>
         </div>
         <blockquote className="whitespace-pre-wrap rounded-xl bg-[var(--color-bg)] px-4 py-3 text-[15px] leading-relaxed">{capture.rawText}</blockquote>

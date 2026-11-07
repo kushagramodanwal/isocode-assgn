@@ -35,6 +35,7 @@ deskRouter.get("/summary", route(async (_req, res) => {
       createdAt: c.createdAt.toISOString(),
       rawText: c.rawText,
       channel: c.channel,
+      source: c.source,
       retailer: { shopName: c.retailer.shopName, area: c.retailer.area },
       lineCount: c.lines.length,
       needsAttention: c.lines.filter((l) => confidenceLevel(l.confidence) !== "high" || l.unit !== "CASE" || !l.productId || l.qty === null).length,

@@ -23,6 +23,7 @@ authRouter.get("/config", (_req, res) => {
   const body: AppConfig = {
     demoMode: env.demoMode,
     aiReader: env.llmEnabled ? `llm:${env.llmModel}` : "rules",
+    mediaCapture: env.llmEnabled,
     demoAccounts: env.demoMode
       ? [
           { phone: RETAILERS[0]!.phone, who: RETAILERS[0]!.shopName, role: "Retailer" },
