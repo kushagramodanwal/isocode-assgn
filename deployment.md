@@ -129,39 +129,60 @@ SMS is mocked. With `DEMO_MODE=true` the login screen lists these accounts, and 
 
 Any other seeded retailer can sign in with `90000000NN`, NN = 01 to 18.
 
-## How it is deployed
+## How it is deployed (Render)
 
-The app is a single Node service plus a managed Postgres. Recommended for a pilot in India:
+The repository includes a Render Blueprint, `render.yaml`. It creates one Node web service (API and
+React app in one process) and one PostgreSQL database, both in Singapore, the Render region closest
+to India.
 
-- **Database:** Neon or Supabase Postgres in the Mumbai region (free tier is enough for a pilot).
-- **App:** Render, Railway or a small VM, Mumbai or Singapore region, Node 20+.
-
-Steps on any such host:
-
-1. Create the Postgres database and copy its connection string.
-2. Create a Node web service from this repository.
-3. Build command:
+1. **Push the code to GitHub.** Render deploys from the repository.
 
    ```bash
-   npm ci && npm run build && npx prisma migrate deploy
+   git push origin main
    ```
 
-4. Start command:
+2. **Create the services.** In the Render dashboard choose **New → Blueprint**, connect GitHub,
+   pick this repository and click **Apply**. Render reads `render.yaml` and creates
+   `company-a-orders` (web) and `company-a-db` (Postgres). `DATABASE_URL` and `SESSION_SECRET` are
+   filled in automatically.
+
+3. **Fill the two values Render asks for:**
+   - `GEMINI_API_KEY`: your Google AI Studio key, or leave it empty to use only the rule-based reader
+     (photo and voice capture then say they need the AI reader).
+   - `APP_ORIGIN`: the service URL, for example `https://company-a-orders.onrender.com`. If you don't
+     know it yet, put that guess in, deploy, then correct it under **Environment** and redeploy.
+
+4. **Wait for the first deploy.** The build runs `npm ci`, `npm run build` and
+   `npx prisma migrate deploy` (creates the tables). Render then starts the app with `npm start`
+   and checks `/api/health`.
+
+5. **Load the demo data once.** Free Render services have no shell, so run the seed from your own
+   machine against the database's **External Database URL** (Render → `company-a-db` → Connect):
 
    ```bash
-   npm start
+   DATABASE_URL="<External Database URL>?sslmode=require" npm run db:seed
    ```
 
-5. Set the environment variables below.
-6. Load the demo data once, from your machine pointing at the production database, or from the host's shell:
+   The seed wipes and reloads the demo data, so it is not part of the build. Run it again whenever
+   you want to reset the demo.
 
-   ```bash
-   npm run db:seed
-   ```
+6. **Open the URL** and sign in with a demo account below. With `DEMO_MODE=true` the OTP appears on
+   screen.
 
-7. Health check path: `/api/health`.
+**Things to know about the free plan**
 
-The app serves its own static files with long cache headers and gzip, so no CDN is required for a pilot.
+- The web service sleeps after 15 minutes without traffic; the first request after that takes about
+  30–60 seconds while it wakes. Open the link a minute before a demo, or use a paid instance
+  (about $7 a month) to keep it awake.
+- Render's free Postgres expires after 30 days. For a longer review, upgrade it, or put a Neon or
+  Supabase connection string (Mumbai or Singapore) in `DATABASE_URL` instead.
+- Don't add `NODE_ENV=production` as an environment variable: the build needs dev tools that npm
+  skips in production mode. `npm start` sets it for the running app.
+- Voice recording needs HTTPS, which Render provides.
+
+**Other hosts.** Any Node 20+ host works the same way: build command
+`npm ci && npm run build && npx prisma migrate deploy`, start command `npm start`, health check
+`/api/health`, plus the environment variables below.
 
 ## Environment variables
 

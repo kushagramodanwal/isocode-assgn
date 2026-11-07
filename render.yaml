@@ -1,0 +1,42 @@
+# Render Blueprint: one Node web service + one Postgres database, both in Singapore (closest to India).
+# Render → New → Blueprint → pick this repo. Fill the two "sync: false" values when asked.
+services:
+  - type: web
+    name: company-a-orders
+    runtime: node
+    region: singapore
+    plan: free
+    # Dev tools (Vite, Prisma CLI, esbuild) are needed to build, so NODE_ENV must NOT be set here;
+    # `npm start` sets NODE_ENV=production for the running app.
+    buildCommand: npm ci && npm run build && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: company-a-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      # true for the demo: OTPs appear on screen because SMS is mocked.
+      - key: DEMO_MODE
+        value: "true"
+      - key: LLM_PROVIDER
+        value: gemini
+      # Your Google AI Studio key. Leave empty to use the rule-based reader only.
+      - key: GEMINI_API_KEY
+        sync: false
+      # The public URL Render gives the service, e.g. https://company-a-orders.onrender.com
+      - key: APP_ORIGIN
+        sync: false
+
+databases:
+  - name: company-a-db
+    region: singapore
+    plan: free
+    databaseName: kirana_orders
+    user: kirana
+    postgresMajorVersion: "16"
