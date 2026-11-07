@@ -25,10 +25,10 @@ export function DeskOrderPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <div>
-        <Link to="/desk/orders" className="text-sm text-[var(--color-accent)]">← Orders</Link>
+        <Link to="/desk/orders" className="text-sm text-[var(--color-muted)]">Orders</Link>
         {params.get("from") === "capture" && (
           <p role="status" className="my-3 rounded-xl bg-[var(--color-accent-soft)] px-4 py-3 text-sm text-[var(--color-accent)]">
-            ✓ Order created from the message.{learned > 0 && ` ${learned} correction${learned > 1 ? "s" : ""} saved for this shop's next messages.`}
+            Order created from the message.{learned > 0 && ` ${learned} correction${learned > 1 ? "s" : ""} saved for this shop's next messages.`}
           </p>
         )}
         <p className="mt-2 font-semibold">{order.retailer.shopName} <span className="font-normal text-[var(--color-muted)]">· {order.retailer.area}</span></p>

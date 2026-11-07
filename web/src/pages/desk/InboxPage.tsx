@@ -36,12 +36,12 @@ export function InboxPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2">
                       <p className="font-semibold">{c.retailer.shopName}</p>
-                      <p className="text-xs text-[var(--color-muted)]">{c.retailer.area} · {ago(new Date(c.createdAt))} · {c.channel === "APP_TEXT" ? "from the app" : "WhatsApp"}{c.source === "PHOTO" ? " · 📷 photo" : c.source === "VOICE" ? " · 🎤 voice note" : ""}</p>
+                      <p className="text-xs text-[var(--color-muted)]">{c.retailer.area} · {ago(new Date(c.createdAt))} · {c.channel === "APP_TEXT" ? "from the app" : "WhatsApp"}{c.source === "PHOTO" ? " · photo" : c.source === "VOICE" ? " · voice note" : ""}</p>
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm text-[var(--color-muted)]">{c.rawText}</p>
                   </div>
                   <div className="shrink-0 text-right text-sm">
-                    <p>{c.lineCount} lines</p>
+                    <p>{c.lineCount} {c.lineCount === 1 ? "line" : "lines"}</p>
                     {c.needsAttention > 0 ? <span className="pill pill-warn">{c.needsAttention} to check</span> : <span className="pill pill-accent">all sure</span>}
                   </div>
                 </Link>

@@ -1,15 +1,20 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { RotateCcw, Search } from "lucide-react";
 import type { CatalogueItem } from "../../../../shared/catalogue";
+import { toPriced } from "../../../../shared/catalogue";
+import { priceCart } from "../../../../shared/pricing";
 import { useCart } from "../../components/cart";
 import { PackArt } from "../../components/PackArt";
 import { Stepper } from "../../components/Stepper";
 import { dict, type Lang } from "../../../../shared/i18n";
-import { pct, rupees } from "../../../../shared/money";
+import { rupeesCompact, rupeesShort } from "../../../../shared/money";
 import { schemeText } from "../../../../shared/schemeText";
 
 type Props = {
   lang: Lang;
+  name: string;
+  availableCreditPaise: number | null;
   items: CatalogueItem[];
   frequent: string[];
   lastOrder: { number: number; lines: { productId: string; cases: number }[] } | null;
@@ -17,27 +22,35 @@ type Props = {
 
 const LOW_STOCK = 10;
 
-export function Catalogue({ lang, items, frequent, lastOrder }: Props) {
+/**
+ * Home: a greeting, one reorder button, search, then the list. The shop's usual products come
+ * first in the list instead of in a separate section.
+ */
+export function Catalogue({ lang, name, availableCreditPaise, items, frequent, lastOrder }: Props) {
   const t = dict[lang];
   const cart = useCart();
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<"all" | "food" | "home">("all");
   const [toast, setToast] = useState<string | null>(null);
   const query = useDeferredValue(q.trim().toLowerCase());
 
+  const ordered = useMemo(() => {
+    const rank = new Map(frequent.map((id, i) => [id, i]));
+    return [...items].sort((a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99));
+  }, [items, frequent]);
+
   const shown = useMemo(() => {
-    return items.filter((i) => {
-      if (cat !== "all" && i.category !== cat) return false;
-      if (!query) return true;
+    if (!query) return ordered;
+    return ordered.filter((i) => {
       const hay = `${i.name} ${i.nameHi} ${i.brand} ${i.packLabel} ${i.code} ${i.keywords.join(" ")}`.toLowerCase();
       return query.split(/\s+/).every((w) => hay.includes(w));
     });
-  }, [items, cat, query]);
+  }, [ordered, query]);
 
-  const frequentItems = frequent.map((id) => items.find((i) => i.id === id)).filter((x): x is CatalogueItem => !!x);
-  const showFrequent = !query && cat === "all" && frequentItems.length > 0;
+  const priced = useMemo(() => new Map(items.map((i) => [i.id, toPriced(i)])), [items]);
+  const cartEntries = Object.entries(cart.items).filter(([id]) => priced.has(id));
+  const quote = useMemo(() => priceCart(cartEntries.map(([productId, cases]) => ({ productId, cases })), priced, new Date()), [cartEntries, priced]);
 
-  function repeatLast() {
+  function reorder() {
     if (!lastOrder) return;
     const stock = new Map(items.map((i) => [i.id, i.stockCases]));
     const next = { ...cart.items };
@@ -48,54 +61,55 @@ export function Catalogue({ lang, items, frequent, lastOrder }: Props) {
       next[l.productId] = Math.min(s, Math.max(next[l.productId] ?? 0, l.cases));
     }
     cart.replace(next);
-    setToast(skipped ? `${t.repeatAdded} · ${skipped} × ${t.outOfStock}` : t.repeatAdded);
-    setTimeout(() => setToast(null), 3500);
+    setToast(skipped ? `${t.repeatAdded} · ${skipped} ${t.outOfStock.toLowerCase()}` : t.repeatAdded);
+    setTimeout(() => setToast(null), 3000);
   }
 
+  const over = availableCreditPaise !== null && availableCreditPaise < 0;
+
   return (
-    <div className="px-4 pt-4">
-      <div className="sticky top-[61px] z-[5] -mx-4 bg-[var(--color-bg)] px-4 pb-3">
-        <label className="sr-only" htmlFor="search">{t.search}</label>
-        <input id="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} className="field" autoComplete="off" />
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Category">
-          {(["all", "food", "home"] as const).map((c) => (
-            <button key={c} role="tab" aria-selected={cat === c} onClick={() => setCat(c)}
-              className={`btn btn-sm shrink-0 ${cat === c ? "btn-primary" : "btn-secondary"}`}>
-              {c === "all" ? t.all : c === "food" ? t.food : t.home}
-            </button>
-          ))}
-        </div>
-      </div>
-      {lastOrder && !query && (
-        <button onClick={repeatLast} className="card mb-4 flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left">
-          <span><span className="font-semibold">↻ {t.repeatLast}</span><span className="block text-xs text-[var(--color-muted)]">{t.orderNo(lastOrder.number)} · {t.items(lastOrder.lines.length)}</span></span>
-          <span className="text-[var(--color-accent)]" aria-hidden>+</span>
-        </button>
-      )}
+    <div className="px-5">
+      <section className="pt-4 pb-8">
+        <h1 className="text-xl font-semibold">{t.greeting(name.split(" ")[0] ?? name)}</h1>
+        <p className={`num mt-1 text-sm ${over ? "text-[var(--color-danger)]" : "text-[var(--color-muted)]"}`}>
+          {availableCreditPaise === null ? <span className="skeleton inline-block h-4 w-40 align-middle" /> : over ? t.creditOverLine : t.creditLine(rupeesShort(availableCreditPaise))}
+        </p>
+        {lastOrder && (
+          <button onClick={reorder} className="btn btn-primary mt-6 h-auto min-h-16 w-full justify-start gap-4 px-5 py-3 text-left">
+            <RotateCcw size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />
+            <span className="flex flex-col gap-1">
+              <span>{t.reorder}</span>
+              <span className="num text-xs font-normal opacity-80">{t.reorderSub(lastOrder.number, lastOrder.lines.length)}</span>
+            </span>
+          </button>
+        )}
+      </section>
 
-      <p className="mb-3 text-xs text-[var(--color-muted)]">{t.gstNote} {t.pricesPrivate}</p>
-
-      {showFrequent && (
-        <section aria-labelledby="freq" className="mb-6">
-          <h2 id="freq" className="mb-2 text-sm font-semibold text-[var(--color-muted)]">{t.frequently}</h2>
-          <ul className="space-y-3">{frequentItems.map((i) => <ProductRow key={`f-${i.id}`} item={i} lang={lang} items={items} />)}</ul>
-        </section>
-      )}
+      <label className="relative block">
+        <span className="sr-only">{t.search}</span>
+        <Search size={18} strokeWidth={1.5} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[var(--color-muted)]" aria-hidden />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} className="field pl-11" autoComplete="off" />
+      </label>
+      <p className="mt-3 text-xs text-[var(--color-muted)]">{t.pricesNote}</p>
 
       {shown.length === 0 ? (
-        <div className="card px-6 py-12 text-center">
-          <p className="font-medium">{t.noResults}</p>
-          <Link to="/shop/capture" className="btn btn-secondary mt-4">{t.typeOrder}</Link>
+        <div className="py-16 text-center">
+          <p>{t.noResults}</p>
+          <Link to="/shop/capture" className="link mt-3 inline-block">{t.byMessage}</Link>
         </div>
       ) : (
-        <section aria-label={t.catalogue}>
-          {showFrequent && <h2 className="mb-2 text-sm font-semibold text-[var(--color-muted)]">{t.all}</h2>}
-          <ul className="space-y-3">{shown.map((i) => <ProductRow key={i.id} item={i} lang={lang} items={items} />)}</ul>
-        </section>
+        <ul className="mt-4 divide-y divide-[var(--color-line)]">
+          {shown.map((i) => <ProductRow key={i.id} item={i} lang={lang} items={items} />)}
+        </ul>
       )}
 
-      {toast && (
-        <div role="status" className="fixed inset-x-4 bottom-20 z-30 mx-auto max-w-md rounded-xl bg-[var(--color-ink)] px-4 py-3 text-center text-sm text-white shadow-lg">{toast}</div>
+      {toast && <div role="status" className="fade-in fixed inset-x-5 bottom-40 z-30 mx-auto max-w-md rounded-xl bg-[var(--color-ink)] px-4 py-3 text-center text-sm text-white">{toast}</div>}
+
+      {quote.lines.length > 0 && (
+        <Link to="/shop/cart" className="fade-in fixed inset-x-0 bottom-[76px] z-20 mx-auto flex h-14 max-w-[calc(36rem-40px)] items-center justify-between rounded-xl bg-[var(--color-accent)] px-5 text-white" style={{ width: "calc(100% - 40px)" }}>
+          <span className="num">{t.cartBar(quote.lines.length)} · <span className="font-semibold">{rupeesShort(quote.totals.totalPaise)}</span></span>
+          <span className="font-semibold">{t.viewCart}</span>
+        </Link>
       )}
     </div>
   );
@@ -107,50 +121,25 @@ function ProductRow({ item, lang, items }: { item: CatalogueItem; lang: Lang; it
   const qty = cart.items[item.id] ?? 0;
   const casePrice = item.unitPricePaise * item.unitsPerCase;
   const out = item.stockCases <= 0;
-  const special = item.unitPricePaise < item.basePricePaise;
   const sibling = out ? items.find((o) => o.id !== item.id && o.name === item.name && o.stockCases > 0) : undefined;
   const name = lang === "hi" ? item.nameHi : item.name;
 
   return (
-    <li className={`card flex gap-3 p-3 ${out ? "opacity-90" : ""}`}>
-      <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={84} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></h3>
-            <p className="text-xs text-[var(--color-faint)]">{item.brand} · {t.packsPerCase(item.unitsPerCase)}</p>
-          </div>
-        </div>
-        <p className="num mt-1.5">
-          <span className="text-lg font-bold">{rupees(casePrice)}</span>
-          <span className="text-sm text-[var(--color-muted)]"> {t.perCase}</span>
-          <span className="ml-1 text-xs text-[var(--color-muted)]">{t.plusGst(pct(item.gstRateBp))}</span>
-        </p>
-        <p className="num text-xs text-[var(--color-muted)]">{t.perPack(rupees(item.unitPricePaise))}{special && <span className="pill pill-accent ml-2">{t.yourPrice}</span>}</p>
-        {item.schemes.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {item.schemes.map((s) => <span key={s.id} className="pill pill-accent">★ {schemeText(s, lang)}</span>)}
-          </div>
-        )}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          {out ? (
-            <span className="pill pill-danger">{t.outOfStock}</span>
-          ) : item.stockCases <= LOW_STOCK ? (
-            <span className="pill pill-warn">{t.lowStock(item.stockCases)}</span>
-          ) : (
-            <span className="text-xs text-[var(--color-faint)]">{t.inStock(item.stockCases)}</span>
-          )}
-          {out ? (
-            sibling ? (
-              <button className="btn btn-secondary btn-sm" onClick={() => cart.add(sibling.id, 1)}>+ {sibling.packLabel}</button>
-            ) : null
-          ) : qty > 0 ? (
-            <Stepper value={qty} max={item.stockCases} onChange={(n) => cart.set(item.id, Math.min(n, item.stockCases))} label={`${name} ${item.packLabel}`} />
-          ) : (
-            <button className="btn btn-primary min-w-24" onClick={() => cart.set(item.id, 1)} aria-label={`${t.add} ${name} ${item.packLabel}`}>{t.add}</button>
-          )}
+    <li className="flex items-center gap-4 py-4">
+      <div className={`flex min-w-0 flex-1 items-center gap-4 ${out ? "opacity-40" : ""}`}>
+        <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
+        <div className="min-w-0">
+          <p className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
+          <p className="num text-xs text-[var(--color-muted)]">{t.caseOf(item.unitsPerCase)} · {rupeesCompact(casePrice)} {t.plusGstShort}</p>
+          {item.schemes.map((s) => <p key={s.id} className="text-xs text-[var(--color-accent)]">{schemeText(s, lang)}</p>)}
+          {out ? <p className="text-xs">{t.outOfStock}</p> : item.stockCases <= LOW_STOCK && <p className="status status-warn">{t.lowStock(item.stockCases)}</p>}
         </div>
       </div>
+      {out ? (
+        sibling && <button className="link shrink-0 text-sm" onClick={() => cart.add(sibling.id, 1)}>{t.tryInstead(sibling.packLabel)}</button>
+      ) : (
+        <Stepper value={qty} max={item.stockCases} onChange={(n) => cart.set(item.id, Math.min(n, item.stockCases))} label={`${name} ${item.packLabel}`} />
+      )}
     </li>
   );
 }

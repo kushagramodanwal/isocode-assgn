@@ -87,7 +87,7 @@ export function MediaCapture({ lang, enabled, retailerId, allowAudioFile = false
   }, [recSeconds]);
 
   if (!enabled) {
-    return <p className="rounded-xl bg-[var(--color-bg)] px-4 py-3 text-sm text-[var(--color-muted)] ring-1 ring-[var(--color-line)]">📷 🎤 {s.off}</p>;
+    return <p className="text-sm text-[var(--color-muted)]">{s.off}</p>;
   }
 
   function setMedia(blob: Blob, type: string, kind: Pending["kind"]) {

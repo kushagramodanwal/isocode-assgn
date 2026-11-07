@@ -41,7 +41,7 @@ export function ExportPage() {
     <div className="space-y-8">
       {made && (
         <div role="status" className="card flex flex-wrap items-center justify-between gap-3 border-[var(--color-accent)] bg-[var(--color-accent-soft)] p-4">
-          <p className="font-medium text-[var(--color-accent)]">✓ {made.count} orders moved to a Tally batch. Download and import it in Tally (Import → Vouchers).</p>
+          <p className="font-medium text-[var(--color-accent)]">{made.count} orders moved to a Tally batch. Download and import it in Tally (Import → Vouchers).</p>
           <div className="flex gap-2">
             <a className="btn btn-primary btn-sm" href={`/api/desk/export/${made.batchId}?format=xml`}>Download Tally XML</a>
             <a className="btn btn-secondary btn-sm" href={`/api/desk/export/${made.batchId}?format=csv`}>CSV</a>

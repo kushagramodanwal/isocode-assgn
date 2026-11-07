@@ -1,21 +1,82 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Quiet by default: white, near-black, one grey, one hairline, ONE accent.
+ * The accent (#0F6B4F) is for the primary button, the active state and the cart bar only.
+ * Status is a small dot plus text, never a filled badge. No shadows.
+ */
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20B9, U+2212, U+2215;
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20B9, U+2212, U+2215;
+}
+/* Only downloaded when a page actually shows Devanagari text. */
+@font-face {
+  font-family: "Noto Sans Devanagari";
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-devanagari-devanagari-400-normal.woff2") format("woff2");
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+}
+@font-face {
+  font-family: "Noto Sans Devanagari";
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/fonts/noto-sans-devanagari-devanagari-600-normal.woff2") format("woff2");
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
+}
+
 @theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
-  --color-bg: #f7f7f4;
+  --font-sans: "Inter", "Noto Sans Devanagari", system-ui, sans-serif;
+
+  /* Three sizes (15 body, 20 titles, 28 key numbers) plus 13 for captions. */
+  --text-xs: 13px;
+  --text-xs--line-height: 1.45;
+  --text-sm: 15px;
+  --text-sm--line-height: 1.5;
+  --text-base: 15px;
+  --text-base--line-height: 1.5;
+  --text-lg: 20px;
+  --text-lg--line-height: 1.35;
+  --text-xl: 20px;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 28px;
+  --text-2xl--line-height: 1.2;
+
+  /* Two weights. */
+  --font-weight-normal: 400;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 600;
+
+  --color-bg: #ffffff;
+  --color-section: #fafaf9;
   --color-surface: #ffffff;
-  --color-ink: #1b1f1d;
-  --color-muted: #5e6661;
-  --color-faint: #8a918c;
-  --color-line: #e4e6e1;
-  --color-accent: #1d6b4f;
+  --color-ink: #111111;
+  --color-muted: #737373;
+  --color-faint: #737373;
+  --color-line: #ededed;
+  --color-accent: #0f6b4f;
   --color-accent-ink: #ffffff;
-  --color-accent-soft: #e7f1ec;
-  --color-warn: #8a5300;
-  --color-warn-soft: #fdf1dc;
+  /* Status dots and status text. Used small, never as fills. */
+  --color-ok: #0f6b4f;
+  --color-warn: #a15c07;
   --color-danger: #b42318;
-  --color-danger-soft: #fdecea;
-  --radius-card: 14px;
+  /* Former tinted backgrounds now resolve to the quiet section grey. */
+  --color-accent-soft: #fafaf9;
+  --color-warn-soft: #fafaf9;
+  --color-danger-soft: #fafaf9;
+
+  --radius-card: 12px;
 }
 
 html {
@@ -26,45 +87,67 @@ body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
 }
+/* Devanagari needs room for its marks above and below the line, and no tracking. */
+:lang(hi) { line-height: 1.7; letter-spacing: 0; }
 .num { font-variant-numeric: tabular-nums; }
 
-/* Buttons: 48px minimum so a thumb between customers can't miss. */
+@layer components {
+/* Buttons are either solid accent or plain text. 48px tall so a thumb can't miss. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   min-height: 48px; padding: 0 1.25rem; border-radius: 12px;
-  font-weight: 600; font-size: 1rem; line-height: 1;
+  font-weight: 600; font-size: 15px; line-height: 1;
   transition: background-color .15s, opacity .15s;
   user-select: none;
 }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
 .btn-primary { background: var(--color-accent); color: var(--color-accent-ink); }
-.btn-primary:not(:disabled):active { background: #155a41; }
-.btn-secondary { background: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-line); }
-.btn-ghost { color: var(--color-accent); padding: 0 .75rem; }
-.btn-danger { background: var(--color-surface); color: var(--color-danger); border: 1px solid #f1c7c2; }
-.btn-sm { min-height: 40px; padding: 0 .9rem; font-size: .9rem; border-radius: 10px; }
+.btn-primary:not(:disabled):active { background: #0b5540; }
+.btn-secondary, .btn-ghost, .btn-danger { background: transparent; color: var(--color-ink); padding: 0 .5rem; }
+.btn-danger { color: var(--color-danger); }
+.btn-secondary:not(:disabled):active, .btn-ghost:not(:disabled):active { opacity: .6; }
+.btn-sm { min-height: 44px; padding: 0 .75rem; border-radius: 12px; }
+.link { color: var(--color-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line); }
 
 .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius-card); }
+.section { background: var(--color-section); border-radius: var(--radius-card); }
 .field {
   width: 100%; min-height: 48px; padding: 0 .9rem; border-radius: 12px;
-  border: 1px solid var(--color-line); background: var(--color-surface); font-size: 1rem;
+  border: 1px solid var(--color-line); background: var(--color-surface); font-size: 15px;
 }
-.field:focus, textarea.field:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; border-color: transparent; }
-textarea.field { padding: .75rem .9rem; min-height: 140px; line-height: 1.5; }
-.label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .375rem; }
+.field:focus, textarea.field:focus { outline: 2px solid var(--color-accent); outline-offset: 0; border-color: transparent; }
+textarea.field { padding: .75rem .9rem; min-height: 132px; line-height: 1.5; }
+.label { display: block; font-size: 13px; color: var(--color-muted); margin-bottom: .375rem; }
 
-.pill { display: inline-flex; align-items: center; gap: .25rem; border-radius: 999px; padding: .15rem .55rem; font-size: .75rem; font-weight: 600; white-space: nowrap; }
-.pill-accent { background: var(--color-accent-soft); color: var(--color-accent); }
-.pill-warn { background: var(--color-warn-soft); color: var(--color-warn); }
-.pill-danger { background: var(--color-danger-soft); color: var(--color-danger); }
-.pill-muted { background: #eff0ec; color: var(--color-muted); }
+/* Status: a 6px dot and plain text. Kept the .pill names so every screen picks it up. */
+.pill, .status { display: inline-flex; align-items: baseline; gap: .4rem; font-size: 13px; color: var(--color-muted); }
+.pill { white-space: nowrap; }
+.pill::before, .status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--color-line); flex: none; transform: translateY(-1px); }
+.pill-accent::before, .status-ok::before { background: var(--color-ok); }
+.pill-warn::before, .status-warn::before { background: var(--color-warn); }
+.pill-warn, .status-warn { color: var(--color-warn); }
+.pill-danger::before, .status-danger::before { background: var(--color-danger); }
+.pill-danger, .status-danger { color: var(--color-danger); }
+.pill-muted::before { background: #c4c4c4; }
+
+}
 
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-@keyframes shimmer { 0% { background-position: -400px 0 } 100% { background-position: 400px 0 } }
-.skeleton { background: linear-gradient(90deg, #eceee9 0, #f5f6f3 40px, #eceee9 80px); background-size: 800px 100%; animation: shimmer 1.2s infinite linear; border-radius: 10px; }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+.skeleton { background: #f2f2f1; border-radius: 12px; animation: fade 1.2s ease-in-out infinite alternate; }
+@keyframes fade { from { opacity: 1 } to { opacity: .55 } }
+.fade-in { animation: fadein .15s ease-out; }
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton, .fade-in { animation: none; }
+  * { transition: none !important; }
+}
+
+/* The browser's own clear button is blue and off-palette; Backspace does the same job. */
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 
 /* Horizontal tab strips scroll by touch without showing a scrollbar. */
 .no-scrollbar { scrollbar-width: none; }

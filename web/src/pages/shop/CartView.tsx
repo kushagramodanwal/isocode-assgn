@@ -39,19 +39,14 @@ export function CartView({ lang, items, availableCreditPaise, onChanged }: { lan
   }, []);
 
   if (!cart.ready) {
-    return <div className="space-y-3 p-4" aria-busy="true"><div className="skeleton h-28" /><div className="skeleton h-28" /><div className="skeleton h-40" /></div>;
+    return <div className="space-y-4 px-5 pt-4" aria-busy="true"><div className="skeleton h-7 w-24" /><div className="skeleton h-16" /><div className="skeleton h-16" /><div className="skeleton h-32" /></div>;
   }
 
   if (entries.length === 0) {
     return (
-      <div className="px-4 pt-16 text-center">
-        <svg viewBox="0 0 24 24" width="48" height="48" className="mx-auto text-[var(--color-faint)]" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d="M3 4h2l2 12h11l2-8H6M9 20a1 1 0 100-2 1 1 0 000 2zM17 20a1 1 0 100-2 1 1 0 000 2z" /></svg>
-        <h1 className="mt-4 text-lg font-semibold">{t.cartEmpty}</h1>
-        <p className="mx-auto mt-1 max-w-xs text-sm text-[var(--color-muted)]">{t.cartEmptyHint}</p>
-        <div className="mt-6 flex justify-center gap-2">
-          <Link to="/shop" className="btn btn-primary">{t.browse}</Link>
-          <Link to="/shop/capture" className="btn btn-secondary">{t.typeOrder}</Link>
-        </div>
+      <div className="px-5 pt-20 text-center">
+        <p>{t.cartEmpty}</p>
+        <Link to="/shop" className="link mt-3 inline-block">{t.browse}</Link>
       </div>
     );
   }
@@ -83,49 +78,43 @@ export function CartView({ lang, items, availableCreditPaise, onChanged }: { lan
   }
 
   return (
-    <div className="px-4 pt-4">
-      <h1 className="mb-3 text-xl font-bold">{t.cart}</h1>
-      <ul className="space-y-3">
+    <div className="px-5 pt-2">
+      <h1 className="text-xl font-semibold">{t.cart}</h1>
+      <ul className="mt-2 divide-y divide-[var(--color-line)]">
         {quote.lines.map((l) => <CartLine key={l.productId} line={l} item={byId.get(l.productId)!} lang={lang} />)}
       </ul>
 
-      <section className="card mt-4 p-4" aria-label="Order total">
-        <dl className="num space-y-1.5 text-sm">
+      <section className="section mt-8 p-5" aria-label={t.total}>
+        <dl className="num space-y-2 text-sm text-[var(--color-muted)]">
           <Row label={t.subtotal} value={rupees(quote.totals.grossPaise)} />
-          {quote.totals.discountPaise > 0 && <Row label={t.discount} value={`− ${rupees(quote.totals.discountPaise)}`} accent />}
-          <Row label={t.taxable} value={rupees(quote.totals.taxablePaise)} />
-          <Row label={t.gst} value={`+ ${rupees(quote.totals.gstPaise)}`} />
-          <div className="my-2 border-t border-[var(--color-line)]" />
-          <div className="flex items-baseline justify-between text-base">
-            <dt className="font-semibold">{t.total}</dt>
-            <dd className="text-xl font-bold">{rupees(quote.totals.totalPaise)}</dd>
-          </div>
-          {quote.totals.freeCases > 0 && (
-            <p className="pt-1 text-[var(--color-accent)]">★ {t.freeGoods}: {t.cases(quote.totals.freeCases)} ({rupees(quote.totals.freeGoodsValuePaise)})</p>
-          )}
+          {quote.totals.discountPaise > 0 && <Row label={t.discount} value={`−\u00a0${rupees(quote.totals.discountPaise)}`} />}
+          <Row label={t.gst} value={rupees(quote.totals.gstPaise)} />
+          {quote.totals.freeCases > 0 && <Row label={t.freeGoods} value={`${t.cases(quote.totals.freeCases)} · ${rupees(quote.totals.freeGoodsValuePaise)}`} />}
         </dl>
+        <div className="mt-4 flex items-baseline justify-between border-t border-[var(--color-line)] pt-4">
+          <span>{t.total}</span>
+          <span className="num text-2xl font-semibold">{rupees(quote.totals.totalPaise)}</span>
+        </div>
       </section>
 
-      {over > 0 && !quote.blocked && (
-        <p className="mt-3 rounded-xl bg-[var(--color-warn-soft)] px-4 py-3 text-sm text-[var(--color-warn)]" role="note">{t.creditWarn(rupees(over))}</p>
-      )}
-      {!online && <p className="mt-3 rounded-xl bg-[var(--color-warn-soft)] px-4 py-3 text-sm text-[var(--color-warn)]">{t.offlineCart}</p>}
-      {error && <p role="alert" className="mt-3 rounded-xl bg-[var(--color-danger-soft)] px-4 py-3 text-sm text-[var(--color-danger)]">{error}</p>}
+      {over > 0 && !quote.blocked && <p className="status status-warn mt-4 whitespace-normal">{t.creditWarn(rupees(over))}</p>}
+      {!online && <p className="status status-warn mt-4 whitespace-normal">{t.offlineCart}</p>}
+      {error && <p role="alert" className="status status-danger mt-4 whitespace-normal">{error}</p>}
 
-      <div className="sticky bottom-16 -mx-4 mt-4 bg-[var(--color-bg)] px-4 pt-2 pb-3">
-        <button className="btn btn-primary w-full text-lg" disabled={quote.blocked || pending || !online} onClick={place}>
-          {pending ? t.placing : `${t.placeOrder} · ${rupees(quote.totals.totalPaise)}`}
+      <div className="sticky bottom-16 -mx-5 mt-6 bg-white px-5 pt-2 pb-4">
+        <button className="btn btn-primary h-14 w-full" disabled={quote.blocked || pending || !online} onClick={place}>
+          {pending ? t.placing : t.placeOrder}
         </button>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`flex justify-between ${accent ? "text-[var(--color-accent)]" : ""}`}>
-      <dt className={accent ? "" : "text-[var(--color-muted)]"}>{label}</dt>
-      <dd>{value}</dd>
+    <div className="flex justify-between gap-4">
+      <dt>{label}</dt>
+      <dd className="text-[var(--color-ink)]">{value}</dd>
     </div>
   );
 }
@@ -135,39 +124,34 @@ function CartLine({ line, item, lang }: { line: LineQuote; item: CatalogueItem; 
   const cart = useCart();
   const name = lang === "hi" ? item.nameHi : item.name;
   const n = line.nudge;
-  const blocked = line.blocked;
+  const out = line.issues.includes("OUT_OF_STOCK");
   return (
-    <li className={`card p-3 ${blocked ? "border-[#f1c7c2]" : ""}`}>
-      <div className="flex gap-3">
-        <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={64} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></h3>
-            <button className="text-sm text-[var(--color-muted)] underline-offset-2 hover:underline" onClick={() => cart.set(item.id, 0)}>{t.remove}</button>
+    <li className="py-4">
+      <div className="flex items-center gap-4">
+        <div className={`flex min-w-0 flex-1 items-center gap-4 ${out ? "opacity-40" : ""}`}>
+          <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
+          <div className="min-w-0">
+            <p className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
+            {!line.blocked && <p className="num text-xs text-[var(--color-muted)]">{rupees(line.totalPaise)}</p>}
           </div>
-          <p className="num text-sm text-[var(--color-muted)]">{rupees(line.casePricePaise)} × {line.cases} · {t.plusGst(pct(line.gstRateBp))}</p>
-          {line.scheme && (
-            <p className="num mt-1 text-sm font-medium text-[var(--color-accent)]">
-              ★ {line.scheme.type === "FREE_GOODS" ? `+${t.cases(line.freeCases)} ${t.free}` : `${pct(line.scheme.percentBp)} · − ${rupees(line.discountPaise)}`}
-            </p>
-          )}
         </div>
-      </div>
-
-      {line.issues.includes("OUT_OF_STOCK") && <p className="mt-2 text-sm text-[var(--color-danger)]">{t.issueOut}</p>}
-      {line.issues.includes("INSUFFICIENT_STOCK") && <p className="mt-2 text-sm text-[var(--color-danger)]">{t.issueShort(item.stockCases)}</p>}
-      {line.issues.includes("FREE_GOODS_SHORT") && <p className="mt-2 text-sm text-[var(--color-warn)]">{t.issueFreeShort}</p>}
-
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="num text-lg font-semibold">{blocked ? "—" : rupees(line.totalPaise)}</span>
-        {!line.issues.includes("OUT_OF_STOCK") && (
+        {out ? (
+          <button className="link shrink-0 text-sm" onClick={() => cart.set(item.id, 0)}>{t.remove}</button>
+        ) : (
           <Stepper value={cart.items[item.id] ?? line.cases} max={Math.max(item.stockCases, 1)} onChange={(v) => cart.set(item.id, v)} label={`${name} ${item.packLabel}`} />
         )}
       </div>
+      {line.scheme && (
+        <p className="num mt-2 pl-[72px] text-xs text-[var(--color-accent)]">
+          {line.scheme.type === "FREE_GOODS" ? `+ ${t.cases(line.freeCases)} ${t.free}` : `${t.off(pct(line.scheme.percentBp))}\u00a0·\u00a0−\u00a0${rupees(line.discountPaise)}`}
+        </p>
+      )}
+      {out && <p className="status status-danger mt-2 pl-[72px]">{t.issueOut}</p>}
+      {line.issues.includes("INSUFFICIENT_STOCK") && <p className="status status-danger mt-2 pl-[72px]">{t.issueShort(item.stockCases)}</p>}
+      {line.issues.includes("FREE_GOODS_SHORT") && <p className="status status-warn mt-2 pl-[72px] whitespace-normal">{t.issueFreeShort}</p>}
       {n && (
-        <button className="mt-3 flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-[var(--color-accent-soft)] px-4 text-left text-sm font-medium text-[var(--color-accent)]" onClick={() => cart.add(item.id, n.addCases)}>
-          <span>★ {n.kind === "FREE_GOODS" ? t.nudgeFree(n.addCases, n.freeCases) : t.nudgeSlab(n.addCases, pct(n.percentBp))}</span>
-          <span className="shrink-0 font-bold">{t.addNudge(n.addCases)}</span>
+        <button className="mt-2 ml-[72px] text-left text-sm text-[var(--color-accent)] active:opacity-60" onClick={() => cart.add(item.id, n.addCases)}>
+          {n.kind === "FREE_GOODS" ? t.nudgeFree(n.addCases, n.freeCases) : t.nudgeSlab(n.addCases, pct(n.percentBp))} <span className="font-semibold">· {t.addMore(n.addCases)}</span>
         </button>
       )}
     </li>

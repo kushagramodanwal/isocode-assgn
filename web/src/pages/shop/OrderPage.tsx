@@ -19,7 +19,7 @@ export function OrderPage() {
     <div className="px-4 pt-4">
       {params.get("placed") && (
         <div role="status" className={`mb-4 rounded-xl px-4 py-3 font-medium ${order.status === "CREDIT_HOLD" ? "bg-[var(--color-warn-soft)] text-[var(--color-warn)]" : "bg-[var(--color-accent-soft)] text-[var(--color-accent)]"}`}>
-          {order.status === "CREDIT_HOLD" ? t.orderHeld : `✓ ${t.orderPlaced}`}
+          {order.status === "CREDIT_HOLD" ? t.orderHeld : t.orderPlaced}
         </div>
       )}
       <OrderDetail order={order} lang={lang} />

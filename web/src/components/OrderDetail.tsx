@@ -34,7 +34,7 @@ export function OrderDetail({ order, lang }: { order: OrderDto; lang: Lang }) {
                 {l.freeCases > 0 && <span className="text-[var(--color-accent)]"> · +{l.freeCases} {t.free}</span>}
                 {l.discountPaise > 0 && <span className="text-[var(--color-accent)]"> · − {rupees(l.discountPaise)}</span>}
               </p>
-              {l.schemeLabel && <p className="text-xs text-[var(--color-accent)]">★ {l.schemeLabel}</p>}
+              {l.schemeLabel && <p className="text-xs text-[var(--color-accent)]">{l.schemeLabel}</p>}
             </div>
             <div className="num text-right text-sm">
               <p className="font-semibold">{rupees(l.totalPaise)}</p>

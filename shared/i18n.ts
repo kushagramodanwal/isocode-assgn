@@ -5,6 +5,21 @@
 export type Lang = "en" | "hi";
 
 const en = {
+  shop: "Shop",
+  byMessage: "Order by message",
+  greeting: (name: string) => `Namaste, ${name}`,
+  creditLine: (avail: string) => `${avail} credit available`,
+  creditOverLine: "Over your credit limit",
+  reorder: "Reorder last order",
+  reorderSub: (n: number, items: number) => `Order #${n} · ${items} item${items === 1 ? "" : "s"}`,
+  caseOf: (n: number) => `Case of ${n}`,
+  plusGstShort: "+ GST",
+  off: (p: string) => `${p} off`,
+  cartBar: (items: number) => `${items} item${items === 1 ? "" : "s"}`,
+  viewCart: "View cart",
+  tryInstead: (p: string) => `Try ${p}`,
+  addMore: (n: number) => `Add ${n}`,
+  pricesNote: "Your prices. GST is added at checkout.",
   catalogue: "Catalogue",
   typeOrder: "Type order",
   orders: "Orders",
@@ -77,6 +92,21 @@ const en = {
 type Dict = typeof en;
 
 const hi: Dict = {
+  shop: "दुकान",
+  byMessage: "मैसेज से ऑर्डर",
+  greeting: (name) => `नमस्ते, ${name} जी`,
+  creditLine: (avail) => `${avail} क्रेडिट बाकी`,
+  creditOverLine: "क्रेडिट सीमा से ऊपर",
+  reorder: "पिछला ऑर्डर दोबारा करें",
+  reorderSub: (n, items) => `ऑर्डर #${n} · ${items} सामान`,
+  caseOf: (n) => `${n} की पेटी`,
+  plusGstShort: "+ GST",
+  off: (p) => `${p} छूट`,
+  cartBar: (items) => `${items} सामान`,
+  viewCart: "कार्ट देखें",
+  tryInstead: (p) => `${p} लें`,
+  addMore: (n) => `${n} और जोड़ें`,
+  pricesNote: "आपके दाम। GST चेकआउट पर जुड़ेगा।",
   catalogue: "सामान",
   typeOrder: "ऑर्डर लिखें",
   orders: "ऑर्डर",

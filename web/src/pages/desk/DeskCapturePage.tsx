@@ -17,7 +17,7 @@ export function DeskCapturePage() {
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <div>
         <div className="mb-4">
-          <Link to="/desk" className="text-sm text-[var(--color-accent)]">← Inbox</Link>
+          <Link to="/desk" className="text-sm text-[var(--color-muted)]">Inbox</Link>
           <h1 className="mt-1 text-lg font-bold">{view.retailer.shopName}</h1>
           <p className="text-sm text-[var(--color-muted)]">{view.retailer.area} · {view.retailer.code} · received {ago(new Date(view.createdAt))} · by {view.createdBy}</p>
         </div>
