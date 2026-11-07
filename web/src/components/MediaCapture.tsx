@@ -175,13 +175,13 @@ export function MediaCapture({ lang, enabled, retailerId, allowAudioFile = false
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <button type="button" className="card flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center hover:border-[var(--color-accent)]" onClick={() => photoInput.current?.click()}>
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-[var(--color-accent)]" aria-hidden><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+          <button type="button" className="card flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center hover:border-[var(--color-accent-fg)]" onClick={() => photoInput.current?.click()}>
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-[var(--color-accent-fg)]" aria-hidden><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
             <span className="font-semibold">{s.photo}</span>
             <span className="text-xs text-[var(--color-muted)]">{s.photoHint}</span>
           </button>
-          <button type="button" className="card flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center hover:border-[var(--color-accent)]" disabled={asking} onClick={startRecording}>
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-[var(--color-accent)]" aria-hidden><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></svg>
+          <button type="button" className="card flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center hover:border-[var(--color-accent-fg)]" disabled={asking} onClick={startRecording}>
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-[var(--color-accent-fg)]" aria-hidden><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></svg>
             <span className="font-semibold">{s.voice}</span>
             <span className="text-xs text-[var(--color-muted)]">{asking ? s.asking : `${s.voiceHint} · ${s.limit(MAX_RECORDING_SECONDS)}`}</span>
           </button>
@@ -189,7 +189,7 @@ export function MediaCapture({ lang, enabled, retailerId, allowAudioFile = false
       )}
 
       {allowAudioFile && !pending && recSeconds === null && (
-        <button type="button" className="w-full text-center text-sm font-medium text-[var(--color-accent)] underline-offset-2 hover:underline" onClick={() => audioInput.current?.click()}>
+        <button type="button" className="w-full text-center text-sm font-medium text-[var(--color-accent-fg)] underline-offset-2 hover:underline" onClick={() => audioInput.current?.click()}>
           {s.voiceFile} (.ogg, .opus, .m4a, .mp3)
         </button>
       )}

@@ -71,6 +71,18 @@ thing to do on each screen.
   bottom sheet with suggestions and search-as-you-type, replacing a 43-item dropdown. *Confirm
   order* stays disabled, and says how many items still need checking, until every line is verified.
 
+## Dark mode
+
+Follows the phone's own setting by default; a moon/sun button in the header lets a person pick
+light or dark, and that choice is remembered. A tiny script in `<head>` applies it before the
+first paint, so a dark-mode user never sees a white flash. The same calm rules apply: near-black
+(#111213), not pure black; one accent; status as a dot and a word. Every colour is a token with a
+dark value, and each text colour still meets WCAG AA on the dark background (body 15.9:1,
+secondary 7.9:1, accent text 8.8:1, amber 8.2:1, red 6.4:1). The deep green is too dark to read
+as text on black, so the accent is split into a fill token (buttons, cart bar: white text on it at
+5.4:1) and a text token (scheme lines, active tab: a lighter green). Pack shots are dimmed slightly
+in dark mode so they don't glare. The browser's status bar colour follows the chosen theme.
+
 ## Choices that differ from the brief we were given
 
 - **Prices say "excl. GST" on every row**, never "incl. GST": dealer invoices are ex-GST and rates

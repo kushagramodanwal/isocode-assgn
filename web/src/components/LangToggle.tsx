@@ -21,7 +21,7 @@ export function LangToggle({ lang }: { lang: Lang }) {
           {i === 1 && <span className="text-[var(--color-line)]" aria-hidden>/</span>}
           <button type="button" role="radio" aria-checked={lang === l} lang={l} disabled={pending}
             onClick={() => choose(l)}
-            className={`flex h-12 min-w-11 items-center justify-center px-2 ${lang === l ? "font-semibold text-[var(--color-accent)]" : "text-[var(--color-muted)]"}`}>
+            className={`flex h-12 min-w-11 items-center justify-center px-2 ${lang === l ? "font-semibold text-[var(--color-accent-fg)]" : "text-[var(--color-muted)]"}`}>
             {l === "hi" ? "हिं" : "EN"}
           </button>
         </span>

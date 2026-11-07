@@ -32,7 +32,7 @@ export function InboxPage() {
           <ul className="space-y-2">
             {captures.map((c) => (
               <li key={c.id}>
-                <Link to={`/desk/capture/${c.id}`} className="card flex items-center gap-4 p-4 hover:border-[var(--color-accent)]">
+                <Link to={`/desk/capture/${c.id}`} className="card flex items-center gap-4 p-4 hover:border-[var(--color-accent-fg)]">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2">
                       <p className="font-semibold">{c.retailer.shopName}</p>
@@ -83,6 +83,6 @@ function Stat({ label, value, sub, href, warn }: { label: string; value: number;
     </>
   );
   return href.startsWith("#")
-    ? <a href={href} className="card block p-4 hover:border-[var(--color-accent)]">{inner}</a>
-    : <Link to={href} className="card block p-4 hover:border-[var(--color-accent)]">{inner}</Link>;
+    ? <a href={href} className="card block p-4 hover:border-[var(--color-accent-fg)]">{inner}</a>
+    : <Link to={href} className="card block p-4 hover:border-[var(--color-accent-fg)]">{inner}</Link>;
 }

@@ -31,10 +31,10 @@ export function OrderDetail({ order, lang }: { order: OrderDto; lang: Lang }) {
               <p className="font-medium leading-snug">{lang === "hi" ? l.nameHi : l.name} <span className="text-[var(--color-muted)]">{l.packLabel}</span></p>
               <p className="num text-sm text-[var(--color-muted)]">
                 {t.cases(l.cases)} × {rupees(l.casePricePaise)}
-                {l.freeCases > 0 && <span className="text-[var(--color-accent)]"> · +{l.freeCases} {t.free}</span>}
-                {l.discountPaise > 0 && <span className="text-[var(--color-accent)]"> · − {rupees(l.discountPaise)}</span>}
+                {l.freeCases > 0 && <span className="text-[var(--color-accent-fg)]"> · +{l.freeCases} {t.free}</span>}
+                {l.discountPaise > 0 && <span className="text-[var(--color-accent-fg)]"> · − {rupees(l.discountPaise)}</span>}
               </p>
-              {l.schemeLabel && <p className="text-xs text-[var(--color-accent)]">{l.schemeLabel}</p>}
+              {l.schemeLabel && <p className="text-xs text-[var(--color-accent-fg)]">{l.schemeLabel}</p>}
             </div>
             <div className="num text-right text-sm">
               <p className="font-semibold">{rupees(l.totalPaise)}</p>
@@ -45,7 +45,7 @@ export function OrderDetail({ order, lang }: { order: OrderDto; lang: Lang }) {
       </ul>
       <dl className="card num space-y-1.5 p-4 text-sm">
         <div className="flex justify-between"><dt className="text-[var(--color-muted)]">{t.subtotal}</dt><dd>{rupees(order.grossPaise)}</dd></div>
-        {order.discountPaise > 0 && <div className="flex justify-between text-[var(--color-accent)]"><dt>{t.discount}</dt><dd>− {rupees(order.discountPaise)}</dd></div>}
+        {order.discountPaise > 0 && <div className="flex justify-between text-[var(--color-accent-fg)]"><dt>{t.discount}</dt><dd>− {rupees(order.discountPaise)}</dd></div>}
         <div className="flex justify-between"><dt className="text-[var(--color-muted)]">{t.taxable}</dt><dd>{rupees(order.taxablePaise)}</dd></div>
         <div className="flex justify-between"><dt className="text-[var(--color-muted)]">{t.gst}</dt><dd>+ {rupees(order.gstPaise)}</dd></div>
         <div className="flex items-baseline justify-between border-t border-[var(--color-line)] pt-2 text-base"><dt className="font-semibold">{t.total}</dt><dd className="text-lg font-bold">{rupees(order.totalPaise)}</dd></div>

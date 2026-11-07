@@ -101,7 +101,7 @@ export function CartView({ lang, items, availableCreditPaise, onChanged }: { lan
       {!online && <p className="status status-warn mt-4 whitespace-normal">{t.offlineCart}</p>}
       {error && <p role="alert" className="status status-danger mt-4 whitespace-normal">{error}</p>}
 
-      <div className="sticky bottom-16 -mx-5 mt-6 bg-white px-5 pt-2 pb-4">
+      <div className="sticky bottom-16 -mx-5 mt-6 bg-[var(--color-bg)] px-5 pt-2 pb-4">
         <button className="btn btn-primary h-14 w-full" disabled={quote.blocked || pending || !online} onClick={place}>
           {pending ? t.placing : t.placeOrder}
         </button>
@@ -142,7 +142,7 @@ function CartLine({ line, item, lang }: { line: LineQuote; item: CatalogueItem; 
         )}
       </div>
       {line.scheme && (
-        <p className="num mt-2 pl-[72px] text-xs text-[var(--color-accent)]">
+        <p className="num mt-2 pl-[72px] text-xs text-[var(--color-accent-fg)]">
           {line.scheme.type === "FREE_GOODS" ? t.freeAdded(line.freeCases) : `${t.offApplied(pct(line.scheme.percentBp))}\u00a0·\u00a0−\u00a0${rupees(line.discountPaise)}`}
         </p>
       )}
@@ -150,7 +150,7 @@ function CartLine({ line, item, lang }: { line: LineQuote; item: CatalogueItem; 
       {line.issues.includes("INSUFFICIENT_STOCK") && <p className="status status-danger mt-2 pl-[72px]">{t.issueShort(item.stockCases)}</p>}
       {line.issues.includes("FREE_GOODS_SHORT") && <p className="status status-warn mt-2 pl-[72px] whitespace-normal">{t.issueFreeShort}</p>}
       {n && (
-        <button className="mt-2 ml-[72px] text-left text-sm text-[var(--color-accent)] active:opacity-60" onClick={() => cart.add(item.id, n.addCases)}>
+        <button className="mt-2 ml-[72px] text-left text-sm text-[var(--color-accent-fg)] active:opacity-60" onClick={() => cart.add(item.id, n.addCases)}>
           {n.kind === "FREE_GOODS" ? t.nudgeFree(n.addCases, n.freeCases) : t.nudgeSlab(n.addCases, pct(n.percentBp))} <span className="font-semibold">· {t.addMore(n.addCases)}</span>
         </button>
       )}

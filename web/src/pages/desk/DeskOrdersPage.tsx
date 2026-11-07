@@ -51,7 +51,7 @@ export function DeskOrdersPage() {
             <tbody className="divide-y divide-[var(--color-line)]">
               {orders.data.map((o) => (
                 <tr key={o.id} className="grid grid-cols-[1fr_auto] gap-x-3 px-4 py-4 md:table-row md:px-0 md:py-0">
-                  <td className="md:px-5 md:py-5"><Link to={`/desk/orders/${o.id}`} className="font-semibold text-[var(--color-accent)] underline-offset-2 hover:underline">#{o.number}</Link><span className="md:hidden"> · {o.retailer.shopName}</span></td>
+                  <td className="md:px-5 md:py-5"><Link to={`/desk/orders/${o.id}`} className="font-semibold text-[var(--color-accent-fg)] underline-offset-2 hover:underline">#{o.number}</Link><span className="md:hidden"> · {o.retailer.shopName}</span></td>
                   <td className="hidden md:table-cell md:px-5 md:py-5">{o.retailer.shopName}<span className="block text-xs text-[var(--color-faint)]">{o.retailer.area}</span></td>
                   <td className="text-[var(--color-muted)] md:px-5 md:py-5">{when(new Date(o.createdAt))}</td>
                   <td className="text-[var(--color-muted)] md:px-5 md:py-5">{o.source === "CAPTURE" ? "Message" : "App"} · {o.lineCount} lines</td>

@@ -22,7 +22,7 @@ export function DeskCapturePage() {
           <p className="text-sm text-[var(--color-muted)]">{view.retailer.area} · {view.retailer.code} · received {ago(new Date(view.createdAt))} · by {view.createdBy}</p>
         </div>
         {view.status !== "NEEDS_REVIEW" && view.orderId && (
-          <p className="mb-4 text-sm">Already confirmed: <Link className="text-[var(--color-accent)] underline" to={`/desk/orders/${view.orderId}`}>open the order</Link></p>
+          <p className="mb-4 text-sm">Already confirmed: <Link className="text-[var(--color-accent-fg)] underline" to={`/desk/orders/${view.orderId}`}>open the order</Link></p>
         )}
         <CaptureReview lang="en" role="DESK" capture={view} catalogue={view.catalogue} />
       </div>

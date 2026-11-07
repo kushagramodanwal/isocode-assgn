@@ -27,7 +27,7 @@ export function PackArt({ kind, brand, label, size = 96, code, alt = "" }: { kin
         decoding="async"
         alt={alt}
         onError={() => setFailed(true)}
-        className="shrink-0 rounded-xl bg-[#f5f4f1] object-cover"
+        className="pack-img shrink-0 rounded-xl bg-[var(--color-image-bg)] object-cover"
         style={{ width: size, height: size }}
       />
     );

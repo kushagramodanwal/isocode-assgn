@@ -138,7 +138,7 @@ function ProductRow({ item, lang, items }: { item: CatalogueItem; lang: Lang; it
           <div className="min-w-0">
             <p className="font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
             <p className="num text-xs text-[var(--color-muted)]">{t.pricePerPc(item.unitsPerCase, rupeesCompact(item.unitPricePaise))}</p>
-            {item.schemes.map((s) => <p key={s.id} className="text-xs text-[var(--color-accent)]">{schemeText(s, lang)}</p>)}
+            {item.schemes.map((s) => <p key={s.id} className="text-xs text-[var(--color-accent-fg)]">{schemeText(s, lang)}</p>)}
             <p className={`status ${out ? "status-danger" : low ? "status-warn" : "status-ok"}`}>{out ? t.outOfStock : low ? t.stockLow(item.stockCases) : t.stockIn}</p>
           </div>
         </div>

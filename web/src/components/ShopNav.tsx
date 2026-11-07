@@ -12,12 +12,12 @@ export function ShopNav({ lang }: { lang: Lang }) {
     { to: "/shop/orders", label: t.orders, Icon: ReceiptText, active: path.startsWith("/shop/orders") },
   ];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-line)] bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Main">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-line)] bg-[var(--color-bg)] pb-[env(safe-area-inset-bottom)]" aria-label="Main">
       <ul className="mx-auto grid max-w-xl grid-cols-3">
         {items.map(({ to, label, Icon, active }) => (
           <li key={to}>
             <Link to={to} aria-current={active ? "page" : undefined}
-              className={`flex h-16 flex-col items-center justify-center gap-1 text-xs ${active ? "font-semibold text-[var(--color-accent)]" : "text-[var(--color-muted)]"}`}>
+              className={`flex h-16 flex-col items-center justify-center gap-1 text-xs ${active ? "font-semibold text-[var(--color-accent-fg)]" : "text-[var(--color-muted)]"}`}>
               <Icon size={22} strokeWidth={1.5} aria-hidden />
               {label}
             </Link>

@@ -25,7 +25,7 @@ export function LoadingPage() {
                   <thead className="text-left text-xs text-[var(--color-muted)]"><tr><th className="py-1 font-medium">SKU</th><th className="py-1 text-right font-medium">Billed</th><th className="py-1 text-right font-medium">Free</th><th className="py-1 text-right font-medium">Load</th></tr></thead>
                   <tbody className="divide-y divide-[var(--color-line)]">
                     {r.skus.map((s) => (
-                      <tr key={s.code}><td className="py-1.5">{s.name}<span className="block text-xs text-[var(--color-faint)]">{s.code}</span></td><td className="text-right">{s.paid}</td><td className="text-right text-[var(--color-accent)]">{s.free || ""}</td><td className="text-right font-semibold">{s.paid + s.free}</td></tr>
+                      <tr key={s.code}><td className="py-1.5">{s.name}<span className="block text-xs text-[var(--color-faint)]">{s.code}</span></td><td className="text-right">{s.paid}</td><td className="text-right text-[var(--color-accent-fg)]">{s.free || ""}</td><td className="text-right font-semibold">{s.paid + s.free}</td></tr>
                     ))}
                   </tbody>
                 </table>

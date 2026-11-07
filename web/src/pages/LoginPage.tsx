@@ -4,6 +4,7 @@ import { api, ApiFailure } from "../lib/api";
 import { useSession } from "../lib/session";
 import { useQuery } from "../lib/useQuery";
 import type { AppConfig, OtpRequestResult } from "../../../shared/api";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 type Step = { step: "phone" } | { step: "code"; phone: string; demoCode?: string; info?: string };
 
@@ -71,7 +72,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
+    <main className="relative mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-10">
+      <div className="absolute top-2 right-3"><ThemeToggle /></div>
       <div className="mb-8">
         <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)] text-white" aria-hidden>
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 8h18v12H3zM2 4h20v4H2zM10 12h4" /></svg>

@@ -27,7 +27,7 @@ export function DeskOrderPage() {
       <div>
         <Link to="/desk/orders" className="text-sm text-[var(--color-muted)]">Orders</Link>
         {params.get("from") === "capture" && (
-          <p role="status" className="my-3 rounded-xl bg-[var(--color-accent-soft)] px-4 py-3 text-sm text-[var(--color-accent)]">
+          <p role="status" className="my-3 rounded-xl bg-[var(--color-accent-soft)] px-4 py-3 text-sm text-[var(--color-accent-fg)]">
             Order created from the message.{learned > 0 && ` ${learned} correction${learned > 1 ? "s" : ""} saved for this shop's next messages.`}
           </p>
         )}

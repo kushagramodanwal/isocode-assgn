@@ -67,8 +67,8 @@ export function ProductSheet({ lang, catalogue, suggested, substitute, currentId
 
   return (
     <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={s.title}>
-      <button type="button" className="fade-in absolute inset-0 bg-black/30" aria-label={s.close} onClick={onClose} />
-      <div className="fade-in absolute inset-x-0 bottom-0 mx-auto flex max-h-[85dvh] max-w-xl flex-col rounded-t-xl bg-white pb-[env(safe-area-inset-bottom)]">
+      <button type="button" className="fade-in absolute inset-0 bg-[var(--color-overlay)]" aria-label={s.close} onClick={onClose} />
+      <div className="fade-in absolute inset-x-0 bottom-0 mx-auto flex max-h-[85dvh] max-w-xl flex-col rounded-t-xl bg-[var(--color-bg)] pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <h2 className="text-lg font-semibold">{s.title}</h2>
           <button type="button" className="flex h-11 w-11 items-center justify-center" onClick={onClose} aria-label={s.close}><X size={20} strokeWidth={1.5} /></button>

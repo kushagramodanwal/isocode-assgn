@@ -8,6 +8,7 @@ const config = tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { files: ["server/**/*.ts", "prisma/**/*.ts", "scripts/**/*.mjs", "*.ts", "*.mjs"], languageOptions: { globals: globals.node } },
+  { files: ["web/public/theme.js"], languageOptions: { globals: globals.browser } },
   { files: ["web/**/*.{ts,tsx}"], languageOptions: { globals: globals.browser }, plugins: { "react-hooks": reactHooks }, rules: reactHooks.configs.recommended.rules },
 );
 

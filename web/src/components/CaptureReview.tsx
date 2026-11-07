@@ -245,7 +245,7 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
 
       <button type="button" className="mt-6 text-sm text-[var(--color-muted)] underline underline-offset-4" onClick={discard}>{s.discard}</button>
 
-      <div className={`sticky -mx-5 mt-8 border-t border-[var(--color-line)] bg-white px-5 pt-4 pb-4 ${role === "RETAILER" ? "bottom-16" : "bottom-0"}`}>
+      <div className={`sticky -mx-5 mt-8 border-t border-[var(--color-line)] bg-[var(--color-bg)] px-5 pt-4 pb-4 ${role === "RETAILER" ? "bottom-16" : "bottom-0"}`}>
         {result && !result.ok && <p role="alert" className="status status-danger mb-3 whitespace-normal">{result.message}</p>}
         <div className="mb-3 flex items-baseline justify-between">
           <span className="text-sm text-[var(--color-muted)]">{s.total}</span>

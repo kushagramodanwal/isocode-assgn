@@ -16,7 +16,7 @@ export function DeskNav({ counts }: { counts: { inbox: number; export: number } 
         {items.map((i) => (
           <li key={i.href}>
             <Link to={i.href} aria-current={i.active ? "page" : undefined}
-              className={`flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap ${i.active ? "bg-[var(--color-accent-soft)] text-[var(--color-accent)]" : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"}`}>
+              className={`flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap ${i.active ? "bg-[var(--color-accent-soft)] text-[var(--color-accent-fg)]" : "text-[var(--color-muted)] hover:text-[var(--color-ink)]"}`}>
               {i.label}
               {!!i.n && <span className="num rounded-full bg-[var(--color-accent)] px-1.5 text-[11px] leading-5 text-white">{i.n}</span>}
             </Link>
