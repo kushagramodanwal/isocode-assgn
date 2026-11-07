@@ -13,8 +13,11 @@ function capture(message: string, c = ctx()) {
 
 const BRIEF = "bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti";
 
+// Sharma General Store's real ordering pattern from the seed: the glucose biscuit is a regular.
+const SHARMA = ctx({ history: new Map([["SKU-BS-075", 8], ["SKU-DT-1KG", 6], ["SKU-TE-250", 5]]) });
+
 describe("the brief's sample message", () => {
-  const lines = capture(BRIEF);
+  const lines = capture(BRIEF, SHARMA);
 
   it("finds three lines, each keeping the retailer's own words", () => {
     expect(lines.map((l) => l.raw)).toEqual([
@@ -32,14 +35,19 @@ describe("the brief's sample message", () => {
     ]);
   });
 
-  it("maps each line to the right SKU with high confidence", () => {
+  it("maps each line to the right SKU with high confidence, using the shop's history", () => {
     expect(lines.map((l) => l.match.productId)).toEqual(["SKU-BS-075", "SKU-DT-1KG", "SKU-TE-250"]);
     for (const l of lines) expect(l.match.level).toBe("high");
   });
 
-  it("offers two alternatives per line, the sibling pack first", () => {
+  it("without history, 'biscuit chhota' is honestly not 'Sure' (three small biscuits fit those words)", () => {
+    const m = capture(BRIEF)[0]!.match;
+    expect(m.level).not.toBe("high");
+  });
+
+  it("offers two alternatives per line, and they are look-alikes", () => {
     expect(lines[0]!.match.alternatives).toHaveLength(2);
-    expect(lines[0]!.match.alternatives[0]!.productId).toBe("SKU-BS-200");
+    for (const a of lines[0]!.match.alternatives) expect(catalogue.find((c) => c.id === a.productId)!.name).toMatch(/biscuit/i);
     expect(lines[2]!.match.alternatives.map((a) => a.productId)).toContain("SKU-TE-500");
   });
 
@@ -52,8 +60,7 @@ describe("the brief's sample message", () => {
   });
 
   it("prefers alternatives from the same category as the match", () => {
-    const alt = lines[0]!.match.alternatives.map((a) => a.productId);
-    expect(alt).toEqual(["SKU-BS-200", "SKU-CB-100"]);
+    for (const a of lines[1]!.match.alternatives) expect(catalogue.find((c) => c.id === a.productId)!.category).toBe("home");
   });
 });
 
@@ -199,8 +206,8 @@ describe("AI-suggested words can help, but never hide doubt", () => {
   });
 
   it("an AI-only suggestion (own words match nothing) is labelled and capped at medium", () => {
-    const m = matchWithAi({ words: ["kala", "dabba"], sizes: [], aiWords: ["neem", "bath", "soap"] }, ctx());
-    expect(m.productId).toBe("SKU-SP-100");
+    const m = matchWithAi({ words: ["kala", "dabba"], sizes: [], aiWords: ["thick", "poha"] }, ctx());
+    expect(m.productId).toBe("SKU-PH-500");
     expect(m.matchedBy).toBe("ai");
     expect(m.confidence).toBeLessThanOrEqual(AI_ONLY_CAP);
     expect(m.level).toBe("medium");
@@ -216,4 +223,41 @@ describe("AI-suggested words can help, but never hide doubt", () => {
   it("no AI words: same as the plain matcher", () => {
     expect(matchWithAi({ words: ["namak"], sizes: [] }, ctx())).toEqual(matchLine(["namak"], [], ctx()));
   });
+});
+
+describe("matching details found by the evaluation set", () => {
+  it("a longer, different word is not a match ('rocket' is not 'rock salt')", () => {
+    expect(tokenSimilarity("rocket", "rock")).toBe(0);
+    expect(tokenSimilarity("biscuits", "biscuit")).toBeGreaterThan(0.85);
+    expect(tokenSimilarity("choco", "chocolate")).toBeGreaterThan(0.7);
+  });
+
+  it("splits messages that skip commas, quantity last or first", () => {
+    expect(splitLines("lal mirch 5 peti dhania 3 peti haldi 200 gm 2 peti")).toEqual(["lal mirch 5 peti", "dhania 3 peti", "haldi 200 gm 2 peti"]);
+    expect(splitLines("5 peti namak 2 peti haldi")).toEqual(["5 peti namak", "2 peti haldi"]);
+  });
+
+  it("'4 pack wala' describes the product; the order is '2 peti'", () => {
+    const l = parseLine("nudals 4 pack wala 2 peti");
+    expect([l.qty, l.unit]).toEqual([2, "CASE"]);
+    expect(l.words).toContain("pack");
+  });
+
+  it("Devanagari size words count like their Hinglish spelling", () => {
+    expect(capture("दो पेटी आलू भुजिया बड़ा")[0]!.match.productId).toBe("SKU-NK-400");
+  });
+});
+
+describe("evaluation set (shared/capture/eval): quality floor for the rule reader", async () => {
+  const { EVAL_CASES, TYPICAL_HISTORY } = await import("./eval/cases");
+  const { evaluate } = await import("./eval/score");
+  const r = await evaluate(EVAL_CASES, parseMessage, ctx({ history: new Map(Object.entries(TYPICAL_HISTORY)) }));
+
+  it("never shows a wrong product as 'Sure'", () => expect(r.dangerous).toBe(0));
+  it("reads every quantity and unit right", () => {
+    expect(r.qtyAccuracy).toBe(100);
+    expect(r.unitAccuracy).toBe(100);
+  });
+  it("gets at least 95% of SKUs right with shop history", () => expect(r.skuAccuracy).toBeGreaterThanOrEqual(95));
+  it("handles every ambiguous line safely", () => expect(r.ambiguousHandled).toBe(r.ambiguousTotal));
 });

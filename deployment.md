@@ -58,7 +58,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
    npm run ai:check
    ```
 
-4. Create the tables and load the sample data (18 shops, 21 SKUs, 216 past orders, 4 WhatsApp messages waiting).
+4. Create the tables and load the sample data (18 shops, 43 SKUs including 22 deliberate look-alikes, about 218 past orders, 4 WhatsApp messages waiting).
 
    ```bash
    npx prisma migrate deploy

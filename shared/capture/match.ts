@@ -169,7 +169,9 @@ export const AI_ONLY_CAP = 70;
 export function matchWithAi(line: { words: string[]; sizes: Size[]; aiWords?: string[] }, ctx: MatchContext): MatchResult {
   const own = matchLine(line.words, line.sizes, ctx);
   if (!line.aiWords?.length || own.matchedBy === "alias") return own;
-  const ai = matchLine([...new Set([...line.aiWords, ...line.words])], line.sizes, { ...ctx, aliases: new Map() });
+  // Score the AI's suggestion on its own words: mixing in the shop's unrecognised words would
+  // dilute a clear suggestion. The shop's words are already weighed in `own`.
+  const ai = matchLine(line.aiWords, line.sizes, { ...ctx, aliases: new Map() });
   if (!ai.productId) return own;
   if (ai.productId === own.productId) {
     const confidence = Math.min(Math.max(own.confidence, Math.min(ai.confidence, own.confidence + AI_AGREE_BOOST)), 100);

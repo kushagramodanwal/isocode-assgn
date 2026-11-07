@@ -15,7 +15,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "ai:check": "tsx scripts/check-ai.ts"
+    "ai:check": "tsx scripts/check-ai.ts",
+    "eval": "tsx scripts/eval-capture.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

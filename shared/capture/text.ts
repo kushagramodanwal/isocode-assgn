@@ -7,6 +7,9 @@ export function normaliseText(input: string): string {
   let s = input.normalize("NFC").toLowerCase();
   s = s.replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)));
   s = s.replace(/[“”"'`’]/g, " ");
+  // Size words typed in Devanagari mean the same as their Hinglish spelling used in keywords.
+  s = s.replace(/\u092c\u0921\u093c?[\u093e\u0940\u0947]/g, " bada ").replace(/\u095c[\u093e\u0940\u0947]/g, " bada ");
+  s = s.replace(/\u091b\u094b\u091f[\u093e\u0940\u0947]/g, " chhota ");
   return s;
 }
 
@@ -48,15 +51,16 @@ export function phonetic(t: string): string {
     .replace(/(?<=.)[aeiouy]+/g, "");
 }
 
-/** 0..1 similarity between two single tokens. */
+/** 0..1 similarity of a retailer's word `a` to a catalogue word `b`. Not symmetric. */
 export function tokenSimilarity(a: string, b: string): number {
   if (a === b) return 1;
   if (a.length >= 3 && b.length >= 3) {
     if (phonetic(a) === phonetic(b)) return 0.92;
-    if (b.startsWith(a) || a.startsWith(b)) {
-      const ratio = Math.min(a.length, b.length) / Math.max(a.length, b.length);
-      return 0.6 + 0.3 * ratio;
-    }
+    // `a` is the retailer's word, `b` a catalogue word. An abbreviation counts ("choco" →
+    // chocolate), and so does a plural ending ("biscuits" → biscuit), but a longer, different word
+    // must not ("rocket" is not "rock").
+    if (b.startsWith(a)) return 0.6 + (0.3 * a.length) / b.length;
+    if (a.startsWith(b) && /^(s|es)$/.test(a.slice(b.length))) return 0.9;
   }
   const longest = Math.max(a.length, b.length);
   if (longest < 4) return 0;

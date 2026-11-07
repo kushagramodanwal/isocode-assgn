@@ -63,7 +63,34 @@ export function splitLines(message: string): string[] {
     .normalize("NFC")
     .split(/\n|,|;|\+|&|\||(?:\s|^)(?:aur|and|और|phir|fir)(?=\s)|\.(?!\d)|।/iu)
     .map((s) => s.replace(/^\s*(?:\d{1,2}[).:-]|[-*•])\s+/, "").trim())
+    .flatMap(splitOnQuantities)
     .filter((s) => /[a-z\u0900-\u097f]/iu.test(s));
+}
+
+/**
+ * Shops often skip commas: "lal mirch 5 peti dhania 3 peti haldi 2 peti". When one chunk holds
+ * several "number + unit" pairs, cut it at each pair. If the chunk starts with a pair
+ * ("5 peti namak 2 peti haldi") the quantity comes first; otherwise it comes last.
+ */
+function splitOnQuantities(chunk: string): string[] {
+  const words = chunk.split(/\s+/).filter(Boolean);
+  const pairs: number[] = [];
+  for (let i = 0; i + 1 < words.length; i++) {
+    const n = normaliseText(words[i]!);
+    const u = normaliseText(words[i + 1]!);
+    if (numberOf(n) !== null && unitOf(u) !== null && words[i + 2]?.toLowerCase() !== "wala") pairs.push(i);
+  }
+  if (pairs.length < 2) return [chunk];
+  const qtyFirst = pairs[0] === 0;
+  const cuts = qtyFirst ? pairs.slice(1) : pairs.slice(0, -1).map((i) => i + 2);
+  const out: string[] = [];
+  let start = 0;
+  for (const c of cuts) {
+    out.push(words.slice(start, c).join(" "));
+    start = c;
+  }
+  out.push(words.slice(start).join(" "));
+  return out.filter(Boolean);
 }
 
 function numberOf(token: string): number | null {
@@ -112,6 +139,14 @@ export function parseLine(rawLine: string): ExtractedLine {
       sizes.push({ value: n, unit: null });
       used[i] = used[i + 1] = true;
     }
+  }
+
+  // 1b. number + count word + "wala" ("4 pack wala") describes the product, it isn't the order.
+  const descriptors: string[] = [];
+  for (let i = 0; i + 2 < tokens.length; i++) {
+    if (used[i] || numberOf(tokens[i]!) === null || !unitOf(tokens[i + 1]!) || !/^(wala|wali|wale|vala|वाला|वाली)$/u.test(tokens[i + 2]!)) continue;
+    descriptors.push(tokens[i + 1]!);
+    used[i] = used[i + 1] = used[i + 2] = true;
   }
 
   // 2. number + count unit ("5 peti") or count unit + number ("peti 5") is the quantity.
@@ -167,6 +202,7 @@ export function parseLine(rawLine: string): ExtractedLine {
     words.push(t);
   });
 
+  words.push(...descriptors);
   if (qty !== null && (!Number.isInteger(qty) || qty <= 0)) qty = null; // "aadha peti" → ask
 
   return { raw: rawLine.trim(), qty, unit, words, sizes };
