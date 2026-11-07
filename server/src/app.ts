@@ -69,7 +69,7 @@ export function createApp() {
     app.use(express.static(webDist, { index: false, maxAge: "1y", immutable: true, setHeaders: (res, file) => {
       if (/(sw\.js|manifest\.webmanifest|\.html)$/.test(file)) res.setHeader("Cache-Control", "no-cache");
       // Fonts keep stable versioned names (so index.html can preload them): long cache, but not "immutable".
-      else if (/\/fonts\//.test(file)) res.setHeader("Cache-Control", "public, max-age=31536000");
+      else if (/\/(fonts|products)\//.test(file)) res.setHeader("Cache-Control", "public, max-age=31536000");
     } }));
     app.get("*", (_req, res) => {
       res.setHeader("Cache-Control", "no-cache");

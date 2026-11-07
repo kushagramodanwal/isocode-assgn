@@ -84,8 +84,14 @@ thing to do on each screen.
   before confirming, and exported orders are corrected in Tally.
 - **Three tabs, no cart tab.** The cart is reached from the cart bar, so the navigation only holds
   places, not actions.
-- **Pack images are inline SVG, not lazy-loaded photos.** They are about 600 bytes each and cost no
-  network requests, which beats lazy loading on 3G.
+- **Product images are rendered pack shots, not photos.** The brands are fictional, so there are no
+  real photos, and copying real pack photos would be someone else's copyright.
+  `scripts/render-pack-images.ts` draws one per SKU from the catalogue: packaging shape by product type
+  (flow-wrap, carton, pouch, bottle, bar), colour by product, brand, English and Hindi name, and pack
+  size. Each is a 192 px WebP of about 2.4 kB (103 kB for all 43), lazy-loaded so only rows on screen
+  download (about 16 at first, about 38 kB), cached for a year and kept offline by the service worker.
+  If an image fails, the row falls back to a small inline drawing, so it is never broken. When the
+  client has real pack photos, they drop into `web/public/products/` with the same names.
 
 ## Performance cost of the look
 

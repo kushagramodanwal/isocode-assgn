@@ -1,6 +1,6 @@
 // Minimal service worker: makes the app installable, caches static assets,
 // and shows an offline page instead of the browser's error when signal drops.
-const STATIC = "static-v2";
+const STATIC = "static-v3";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (e) => {
@@ -18,7 +18,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  if (url.pathname.startsWith("/assets/")) {
+  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/products/") || url.pathname.startsWith("/fonts/")) {
     e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
       const copy = res.clone();
       caches.open(STATIC).then((c) => c.put(req, copy));

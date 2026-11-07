@@ -134,7 +134,7 @@ function ProductRow({ item, lang, items }: { item: CatalogueItem; lang: Lang; it
     <li className="py-4">
       <div className="flex items-center gap-4">
         <div className={`flex min-w-0 flex-1 items-center gap-4 ${out ? "opacity-40" : ""}`}>
-          <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
+          <PackArt code={item.code} kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
           <div className="min-w-0">
             <p className="font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
             <p className="num text-xs text-[var(--color-muted)]">{t.pricePerPc(item.unitsPerCase, rupeesCompact(item.unitPricePaise))}</p>

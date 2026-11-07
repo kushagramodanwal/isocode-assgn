@@ -1,6 +1,12 @@
+import { useState } from "react";
+
+/** Bump when scripts/render-pack-images.ts output changes, so phones fetch the new images. */
+const PACK_IMAGE_VERSION = 1;
+
 /**
- * Inline SVG pack illustrations: no image requests on slow 3G, crisp at any size,
- * and the shape tells a shopkeeper what the product is before they read the name.
+ * Product image. With a SKU code it shows the rendered pack shot (/products/<code>.webp, about
+ * 2.4 kB, lazy-loaded so only rows on screen download). Without one, or if the image fails,
+ * it falls back to the inline SVG drawing, so a row is never left with a broken image.
  */
 const BRAND_COLORS: Record<string, { fill: string; tint: string }> = {
   "Rewa Foods": { fill: "#c2552b", tint: "#fbeee7" },
@@ -9,7 +15,23 @@ const BRAND_COLORS: Record<string, { fill: string; tint: string }> = {
   "Madhuban Kitchen": { fill: "#b07a12", tint: "#f9f2e2" },
 };
 
-export function PackArt({ kind, brand, label, size = 96 }: { kind: string; brand: string; label: string; size?: number }) {
+export function PackArt({ kind, brand, label, size = 96, code, alt = "" }: { kind: string; brand: string; label: string; size?: number; code?: string; alt?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (code && !failed) {
+    return (
+      <img
+        src={`/products/${code.toLowerCase()}.webp?v=${PACK_IMAGE_VERSION}`}
+        width={size}
+        height={size}
+        loading="lazy"
+        decoding="async"
+        alt={alt}
+        onError={() => setFailed(true)}
+        className="shrink-0 rounded-xl bg-[#f5f4f1] object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   const c = BRAND_COLORS[brand] ?? { fill: "#5e6661", tint: "#eff0ec" };
   return (
     <svg viewBox="0 0 96 96" width={size} height={size} role="img" aria-hidden="true" className="shrink-0 rounded-xl" style={{ background: c.tint }}>

@@ -298,7 +298,7 @@ function ReviewLine({ line, st, issue, flagged, canLearn, item, s, lang, onChang
     return (
       <li>
         <button type="button" className="flex min-h-16 w-full items-center gap-4 py-3 text-left" onClick={() => onChange({ open: true })}>
-          {item && <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={40} />}
+          {item && <PackArt code={item.code} kind={item.image} brand={item.brand} label={item.packLabel} size={40} />}
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item?.packLabel}</span></span>
             <span className="num block text-xs text-[var(--color-muted)]">{cases !== null && s.casesShort(cases)}{st.unit === "PIECE" && ` · ${st.qty} ${s.pieces.toLowerCase()}`}</span>
@@ -317,7 +317,7 @@ function ReviewLine({ line, st, issue, flagged, canLearn, item, s, lang, onChang
       <p className="text-sm text-[var(--color-muted)]">“{line.rawText}”</p>
 
       <div className="mt-3 flex items-start gap-4">
-        {item ? <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} /> : <div className="h-14 w-14 shrink-0 rounded-xl border border-dashed border-[var(--color-line)]" />}
+        {item ? <PackArt code={item.code} kind={item.image} brand={item.brand} label={item.packLabel} size={56} /> : <div className="h-14 w-14 shrink-0 rounded-xl border border-dashed border-[var(--color-line)]" />}
         <div className="min-w-0 flex-1">
           {item ? (
             <>

@@ -36,6 +36,14 @@ prisma/   schema, migrations, fictional seed data
 docs/     Technical Design Document
 ```
 
+## Product images
+
+`web/public/products/<sku>.webp` are pack shots rendered from the catalogue (the brands are fictional, so there are no real photos). After changing the catalogue, re-render them:
+
+```bash
+npx tsx scripts/render-pack-images.ts
+```
+
 ## Measuring the AI part
 
 `npm run eval` scores message capture on 30 labelled messages (49 lines) against a catalogue with deliberate look-alikes: SKU, quantity and unit accuracy, and "dangerous" errors (a wrong product shown as "Sure"). Add `-- --gemini` to include Gemini. Current results are in the TDD, §7.3.

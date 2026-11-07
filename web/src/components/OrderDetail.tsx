@@ -26,7 +26,7 @@ export function OrderDetail({ order, lang }: { order: OrderDto; lang: Lang }) {
       <ul className="card divide-y divide-[var(--color-line)]">
         {order.lines.map((l) => (
           <li key={l.id} className="flex gap-3 p-3">
-            <PackArt kind={l.image} brand={l.brand} label={l.packLabel} size={52} />
+            <PackArt code={l.code} kind={l.image} brand={l.brand} label={l.packLabel} size={56} />
             <div className="min-w-0 flex-1">
               <p className="font-medium leading-snug">{lang === "hi" ? l.nameHi : l.name} <span className="text-[var(--color-muted)]">{l.packLabel}</span></p>
               <p className="num text-sm text-[var(--color-muted)]">

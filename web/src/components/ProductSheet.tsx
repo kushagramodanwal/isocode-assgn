@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import type { CatalogueItem } from "../../../shared/catalogue";
 import { pct, rupees } from "../../../shared/money";
 import type { Lang } from "../../../shared/i18n";
+import { PackArt } from "./PackArt";
 
 const L = {
   en: { title: "Choose product", search: "Search products", suggested: "Suggested", substitute: "In stock instead", results: "Products", none: "No product matches that", close: "Close", out: "Out of stock", stock: (n: number) => `${n} in stock`, perCase: "/ case" },
@@ -51,7 +52,8 @@ export function ProductSheet({ lang, catalogue, suggested, substitute, currentId
     return (
       <li key={`${substituted ? "s" : ""}${c.id}`}>
         <button type="button" disabled={c.id === currentId} onClick={() => onPick(c.id, substituted)}
-          className="flex min-h-14 w-full items-center justify-between gap-3 py-3 text-left active:opacity-60 disabled:opacity-40">
+          className="flex min-h-14 w-full items-center gap-4 py-3 text-left active:opacity-60 disabled:opacity-40">
+          <PackArt code={c.code} kind={c.image} brand={c.brand} label={c.packLabel} size={40} />
           <span className="min-w-0">
             <span className="block font-semibold">{lang === "hi" ? c.nameHi : c.name} <span className="font-normal text-[var(--color-muted)]">{c.packLabel}</span></span>
             <span className="num block text-xs text-[var(--color-muted)]">
