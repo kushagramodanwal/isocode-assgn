@@ -28,6 +28,7 @@ export async function loadCapture(id: string, retailerScope: string | null): Pro
     lines: capture.lines.map((l) => ({
       id: l.id,
       rawText: l.rawText,
+      phrase: l.phrase,
       qty: l.qty,
       unit: l.unit,
       productId: l.productId,

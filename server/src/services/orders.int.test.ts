@@ -108,6 +108,18 @@ describe.skipIf(!run)("placeOrder (database)", () => {
 });
 
 describe.skipIf(!run)("capture confirm (database)", () => {
+  it("a correction is not saved as an alias when the person unticks 'Save as alias'", async () => {
+    const f = await fixture();
+    const id = await createCapture({ actorId: f.user.id, retailerId: f.retailer.id, text: "3 peti lal dabba", channel: "WHATSAPP_TEXT" });
+    const [line] = await db.captureLine.findMany({ where: { captureId: id } });
+    const r = await confirmCapture({
+      actorId: f.user.id, captureId: id, retailerScope: null,
+      lines: [{ lineId: line!.id, removed: false, productId: f.biscuit.id, cases: 3, unitConfirmed: true, checked: true, substituted: false, saveAlias: false }],
+    });
+    expect(r.ok).toBe(true);
+    expect(await db.retailerAlias.count({ where: { retailerId: f.retailer.id } })).toBe(0);
+  });
+
   it("won't place an order until unclear units and unsure lines are answered, then learns corrections", async () => {
     const f = await fixture();
     const id = await createCapture({ actorId: f.user.id, retailerId: f.retailer.id, text: "chhota biscuit 5, lal dabba 2 peti", channel: "APP_TEXT" });

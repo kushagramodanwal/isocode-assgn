@@ -5,45 +5,43 @@
  * The accent (#0F6B4F) is for the primary button, the active state and the cart bar only.
  * Status is a small dot plus text, never a filled badge. No shadows.
  */
+/*
+ * Fonts: 98 kB in total, inside the ~100 kB budget. Inter 400 + 600 (48 kB) and Noto Sans
+ * Devanagari 400 only (50 kB); the browser draws Devanagari semibold from the 400 file.
+ * Stable versioned names under /fonts so index.html can preload Inter 400. The Devanagari file
+ * downloads only when a screen actually shows Hindi (unicode-range).
+ */
 @font-face {
   font-family: "Inter";
   font-weight: 400;
   font-display: swap;
-  src: url("./assets/fonts/inter-latin-400-normal.woff2") format("woff2");
+  src: url("/fonts/inter-400-v5.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20B9, U+2212, U+2215;
 }
 @font-face {
   font-family: "Inter";
   font-weight: 600;
   font-display: swap;
-  src: url("./assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+  src: url("/fonts/inter-600-v5.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20B9, U+2212, U+2215;
 }
-/* Only downloaded when a page actually shows Devanagari text. */
 @font-face {
   font-family: "Noto Sans Devanagari";
-  font-weight: 400;
+  font-weight: 400 600;
   font-display: swap;
-  src: url("./assets/fonts/noto-sans-devanagari-devanagari-400-normal.woff2") format("woff2");
-  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
-}
-@font-face {
-  font-family: "Noto Sans Devanagari";
-  font-weight: 600;
-  font-display: swap;
-  src: url("./assets/fonts/noto-sans-devanagari-devanagari-600-normal.woff2") format("woff2");
+  src: url("/fonts/noto-devanagari-400-v5.woff2") format("woff2");
   unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF;
 }
 
 @theme {
   --font-sans: "Inter", "Noto Sans Devanagari", system-ui, sans-serif;
 
-  /* Three sizes (15 body, 20 titles, 28 key numbers) plus 13 for captions. */
+  /* Three sizes (16 body, 20 titles, 28 totals) plus 13 for captions. 16 is the floor for anything important. */
   --text-xs: 13px;
   --text-xs--line-height: 1.45;
-  --text-sm: 15px;
+  --text-sm: 16px;
   --text-sm--line-height: 1.5;
-  --text-base: 15px;
+  --text-base: 16px;
   --text-base--line-height: 1.5;
   --text-lg: 20px;
   --text-lg--line-height: 1.35;
@@ -62,8 +60,9 @@
   --color-section: #fafaf9;
   --color-surface: #ffffff;
   --color-ink: #111111;
-  --color-muted: #737373;
-  --color-faint: #737373;
+  /* #6B6B6B on white is 5.3:1, above WCAG AA (4.5:1) for small text. */
+  --color-muted: #6b6b6b;
+  --color-faint: #6b6b6b;
   --color-line: #ededed;
   --color-accent: #0f6b4f;
   --color-accent-ink: #ffffff;
@@ -79,6 +78,21 @@
   --radius-card: 12px;
 }
 
+/* Spacing scale (4 px base) and layout constants, for code outside Tailwind's own 4 px scale. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --screen-padding: 20px;
+  --tap: 48px;
+  --hairline: 1px solid var(--color-line);
+  --motion: 150ms ease-out;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -87,7 +101,7 @@ body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
 }
 /* Devanagari needs room for its marks above and below the line, and no tracking. */
@@ -99,7 +113,7 @@ body {
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   min-height: 48px; padding: 0 1.25rem; border-radius: 12px;
-  font-weight: 600; font-size: 15px; line-height: 1;
+  font-weight: 600; font-size: 16px; line-height: 1.2;
   transition: background-color .15s, opacity .15s;
   user-select: none;
 }
@@ -109,14 +123,14 @@ body {
 .btn-secondary, .btn-ghost, .btn-danger { background: transparent; color: var(--color-ink); padding: 0 .5rem; }
 .btn-danger { color: var(--color-danger); }
 .btn-secondary:not(:disabled):active, .btn-ghost:not(:disabled):active { opacity: .6; }
-.btn-sm { min-height: 44px; padding: 0 .75rem; border-radius: 12px; }
+.btn-sm { min-height: 48px; padding: 0 .75rem; border-radius: 12px; }
 .link { color: var(--color-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line); }
 
 .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius-card); }
 .section { background: var(--color-section); border-radius: var(--radius-card); }
 .field {
   width: 100%; min-height: 48px; padding: 0 .9rem; border-radius: 12px;
-  border: 1px solid var(--color-line); background: var(--color-surface); font-size: 15px;
+  border: 1px solid var(--color-line); background: var(--color-surface); font-size: 16px;
 }
 .field:focus, textarea.field:focus { outline: 2px solid var(--color-accent); outline-offset: 0; border-color: transparent; }
 textarea.field { padding: .75rem .9rem; min-height: 132px; line-height: 1.5; }

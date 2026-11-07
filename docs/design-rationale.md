@@ -2,6 +2,21 @@
 
 Short version for the TDD. The full tokens are in `web/src/index.css`.
 
+## TDD paragraph ("UI decisions")
+
+Kirana owners order between customers on low-end phones over slow 3G, so the interface is quiet on
+purpose: white space instead of boxes, hierarchy from size and weight rather than colour, and one
+primary action per screen (*Reorder last order*, *Place order*, *Confirm order*). One deep-green
+accent marks only that action, the active state, the cart bar and scheme text. Status is always a
+small dot plus a word, so it never depends on colour. Body text is 16 px in Inter and Noto Sans
+Devanagari (98 kB of fonts in total, Hindi only loaded when shown), with a हिं / EN switch always in
+the header and layouts that let Hindi run 30% longer without truncating. Detail appears on demand:
+verified order lines fold into one row, the original message and photo open on tap, and the product
+picker is a searchable bottom sheet. On the order review screen, units are taken only from the
+customer's words and otherwise asked, quantities are never assumed, and *Confirm* stays disabled
+until every line is settled. The desk gets the same calm language on a desktop, plus an explicit
+choice of whether a correction becomes the shop's saved word.
+
 ## The idea
 
 Kirana owners order between customers, on low-end Android phones over slow 3G, in Hindi or English.
@@ -17,22 +32,36 @@ thing to do on each screen.
    tab and the cart bar. Scheme lines use it as plain text, because a scheme is money for the shop.
 3. **Status is a 6 px dot plus words** (green verified, amber check, red blocked). Never a filled
    badge, never colour alone, so it also works for colour-blind users.
-4. **Three type sizes** (15 body, 20 titles, 28 totals) plus 13 for captions. Two weights (400, 600).
-   Tabular numbers for every price and quantity.
+4. **Three type sizes** (16 body, the minimum for anything important; 20 titles; 28 totals) plus 13
+   for captions. Two weights (400, 600). Tabular numbers for every price and quantity. Secondary text
+   is #6B6B6B (5.3:1 on white, above WCAG AA).
 5. **No shadows, no gradients, no emojis.** Hairline borders (`#EDEDED`) where depth is needed.
-   Outline icons at 1.5 px, used only in navigation and a few buttons.
+   Outline icons at 1.5 px, used only in navigation and a few buttons. Spacing on a 4 px scale,
+   20 px screen padding, 48 px tap targets.
+7. **Hindi is a first-class language.** A हिं / EN switch is always in the header. Hindi runs at
+   line-height 1.7 and about 30% longer, so nothing has a fixed width and nothing is truncated:
+   long names wrap.
 6. **Show less, reveal on tap.** Verified review lines fold into one row; the original message is
    two lines until expanded; the photo or voice note opens on request.
 
 ## Key screens
 
-- **Home:** a greeting with the credit left, one *Reorder last order* button, search, then one
-  product per row: a 56 px pack image, name and pack size, "Case of 96 · ₹777.60 + GST", the scheme
-  as a line of green text, and a stepper. The shop's usual products sort to the top instead of
+- **Login:** logo, one greeting, phone number, *Send OTP*; then the 6-digit OTP with a resend
+  countdown that matches the server's 30-second limit. No password.
+- **Home:** a greeting with the credit left, one *Reorder last order* button with a preview ("6 items
+  · about ₹30,495", priced at today's prices), search, then one product per row: a 56 px pack image,
+  name and pack size, "Case of 96 · ₹8.10/pc excl. GST", the scheme as a line of green text, stock as
+  a dot and a word, and a stepper (a "+" that becomes "− 3 +"). The shop's usual products sort to the top instead of
   getting their own section. Out-of-stock rows fade to 40% and offer the in-stock pack size.
-- **Cart bar:** appears only when the cart has items: "2 items · ₹18,966 · View cart".
-- **Cart:** a plain list, a quiet summary (goods value, discount, GST) and the total at 28 px.
-  Scheme hints are one tap: "Add 1 more case, get 1 free · Add 1".
+- **Cart bar:** a slim pill that appears only when the cart has items: "2 items · ₹18,966 · View cart".
+- **Cart:** a plain list; each line says "9 cases · ₹7,348.32" and the scheme result ("+1 free added",
+  "3% off applied"). A quiet summary (goods value, discount, GST), the total at 28 px, one calm
+  credit note if the order goes over, and one *Place order* button. Scheme hints are one tap.
+- **Order desk:** a calm table with generous rows and status tabs; credit holds as dot and text;
+  the review screen edits lines in place; a corrected line offers *Save "kala" as this shop's word*
+  (ticked by default) so the desk decides what the system learns; one *Export to Tally* button.
+- **States:** a plain grey skeleton while loading; an empty state is one sentence and one action;
+  an error is one friendly line and *Try again*.
 - **Order review (AI capture):** the problems come first. Each line shows the shop's own words in grey,
   then the matched product with the shop's price, stock and match %. There is one quantity box and one
   *Cases | Pieces* switch, with "1 case = 96 pieces" under it. "peti/case" selects Cases and
@@ -44,9 +73,15 @@ thing to do on each screen.
 
 ## Choices that differ from the brief we were given
 
-- **Prices show "+ GST", not "incl. GST".** Dealer invoices are ex-GST and rates differ by product
-  (0%, 5%, 18%). The home screen says once that GST is added at checkout, and the cart shows it
-  line by line. This meets "show clearly whether GST is included" without inventing tax-inclusive prices.
+- **Prices say "excl. GST" on every row**, never "incl. GST": dealer invoices are ex-GST and rates
+  differ by product (0%, 5%, 18%); the cart itemises GST. The per-piece price is shown because that is
+  how the sample data and shops quote it; the case price appears in the cart.
+- **Unit questions keep a specific reason** ("Cases or pieces?", "Enter the quantity") instead of a
+  generic "Check this": it tells the shop what to do. "Check this" is used when the only doubt is the match.
+- **"Change" offers the two alternatives plus a search box**, because the right product is sometimes
+  neither alternative.
+- **Order lines are not edited after an order is placed**; corrections happen on the review screen
+  before confirming, and exported orders are corrected in Tally.
 - **Three tabs, no cart tab.** The cart is reached from the cart bar, so the navigation only holds
   places, not actions.
 - **Pack images are inline SVG, not lazy-loaded photos.** They are about 600 bytes each and cost no
@@ -54,7 +89,8 @@ thing to do on each screen.
 
 ## Performance cost of the look
 
-The fonts are Inter and Noto Sans Devanagari, self-hosted woff2 with `font-display: swap`, weights
-400 and 600 only. Latin costs 24 kB per weight. Devanagari costs 50–54 kB per weight and, thanks to
-`unicode-range`, is only downloaded when a screen shows Hindi. The icons add about 4 kB of JS.
+Fonts total 98 kB, inside the ~100 kB budget: Inter 400 and 600 (24 kB each; 400 is preloaded) and
+Noto Sans Devanagari 400 only (50 kB, semibold drawn from it), self-hosted woff2 with
+`font-display: swap`. Thanks to `unicode-range`, the Devanagari file downloads only when a screen
+shows Hindi. The icons add about 4 kB of JS.
 Motion is limited to 150 ms fades and is turned off for people who ask for reduced motion.

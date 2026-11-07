@@ -25,8 +25,8 @@ export function ShopLayout() {
   return (
     <CartProvider userId={me.id}>
       <div lang={lang} className="mx-auto min-h-dvh max-w-xl pb-40">
-        <header className="flex h-14 items-center justify-between gap-3 px-5">
-          <p className="truncate text-sm font-semibold">{me.retailer.shopName}</p>
+        <header className="flex min-h-14 items-center justify-between gap-3 px-5 py-1">
+          <p className="min-w-0 text-sm font-semibold">{me.retailer.shopName}</p>
           <div className="flex shrink-0 items-center">
             <LangToggle lang={lang} />
             <button className="btn btn-ghost btn-sm font-normal text-[var(--color-muted)]" onClick={async () => { await logout(); navigate("/login"); }}>{t.logout}</button>

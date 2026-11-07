@@ -43,20 +43,20 @@ export function DeskOrdersPage() {
       {orders.error ? <ErrorState error={orders.error} onRetry={orders.reload} /> : !orders.data ? <Skeleton rows={6} className="h-12" /> : orders.data.length === 0 ? (
         <Empty title="No orders here" body={q ? "Try another shop name or order number." : "Orders appear here once placed in the app or confirmed from a message."} />
       ) : (
-        <div className="card overflow-hidden">
+        <div className="overflow-hidden border-y border-[var(--color-line)]">
           <table className="w-full text-sm">
-            <thead className="hidden bg-[var(--color-bg)] text-left text-xs text-[var(--color-muted)] md:table-header-group">
-              <tr><th className="px-4 py-2 font-medium">Order</th><th className="px-4 py-2 font-medium">Shop</th><th className="px-4 py-2 font-medium">Placed</th><th className="px-4 py-2 font-medium">Source</th><th className="px-4 py-2 text-right font-medium">Total</th><th className="px-4 py-2 font-medium">Status</th></tr>
+            <thead className="hidden text-left text-xs text-[var(--color-muted)] md:table-header-group">
+              <tr><th className="px-5 py-3 font-normal">Order</th><th className="px-5 py-3 font-normal">Shop</th><th className="px-5 py-3 font-normal">Placed</th><th className="px-5 py-3 font-normal">Source</th><th className="px-5 py-3 text-right font-normal">Total</th><th className="px-5 py-3 font-normal">Status</th></tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-line)]">
               {orders.data.map((o) => (
-                <tr key={o.id} className="grid grid-cols-[1fr_auto] gap-x-3 px-4 py-3 md:table-row md:px-0 md:py-0">
-                  <td className="md:px-4 md:py-3"><Link to={`/desk/orders/${o.id}`} className="font-semibold text-[var(--color-accent)] underline-offset-2 hover:underline">#{o.number}</Link><span className="md:hidden"> · {o.retailer.shopName}</span></td>
-                  <td className="hidden md:table-cell md:px-4 md:py-3">{o.retailer.shopName}<span className="block text-xs text-[var(--color-faint)]">{o.retailer.area}</span></td>
-                  <td className="text-[var(--color-muted)] md:px-4 md:py-3">{when(new Date(o.createdAt))}</td>
-                  <td className="text-[var(--color-muted)] md:px-4 md:py-3">{o.source === "CAPTURE" ? "Message" : "App"} · {o.lineCount} lines</td>
-                  <td className="num font-semibold md:px-4 md:py-3 md:text-right">{rupees(o.totalPaise)}</td>
-                  <td className="md:px-4 md:py-3"><StatusPill status={o.status} /></td>
+                <tr key={o.id} className="grid grid-cols-[1fr_auto] gap-x-3 px-4 py-4 md:table-row md:px-0 md:py-0">
+                  <td className="md:px-5 md:py-5"><Link to={`/desk/orders/${o.id}`} className="font-semibold text-[var(--color-accent)] underline-offset-2 hover:underline">#{o.number}</Link><span className="md:hidden"> · {o.retailer.shopName}</span></td>
+                  <td className="hidden md:table-cell md:px-5 md:py-5">{o.retailer.shopName}<span className="block text-xs text-[var(--color-faint)]">{o.retailer.area}</span></td>
+                  <td className="text-[var(--color-muted)] md:px-5 md:py-5">{when(new Date(o.createdAt))}</td>
+                  <td className="text-[var(--color-muted)] md:px-5 md:py-5">{o.source === "CAPTURE" ? "Message" : "App"} · {o.lineCount} lines</td>
+                  <td className="num font-semibold md:px-5 md:py-5 md:text-right">{rupees(o.totalPaise)}</td>
+                  <td className="md:px-5 md:py-5"><StatusPill status={o.status} /></td>
                 </tr>
               ))}
             </tbody>

@@ -132,7 +132,7 @@ function CartLine({ line, item, lang }: { line: LineQuote; item: CatalogueItem; 
           <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
           <div className="min-w-0">
             <p className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
-            {!line.blocked && <p className="num text-xs text-[var(--color-muted)]">{rupees(line.totalPaise)}</p>}
+            <p className="num text-xs text-[var(--color-muted)]">{t.cases(line.cases)}{!line.blocked && ` · ${rupees(line.totalPaise)}`}</p>
           </div>
         </div>
         {out ? (
@@ -143,7 +143,7 @@ function CartLine({ line, item, lang }: { line: LineQuote; item: CatalogueItem; 
       </div>
       {line.scheme && (
         <p className="num mt-2 pl-[72px] text-xs text-[var(--color-accent)]">
-          {line.scheme.type === "FREE_GOODS" ? `+ ${t.cases(line.freeCases)} ${t.free}` : `${t.off(pct(line.scheme.percentBp))}\u00a0·\u00a0−\u00a0${rupees(line.discountPaise)}`}
+          {line.scheme.type === "FREE_GOODS" ? t.freeAdded(line.freeCases) : `${t.offApplied(pct(line.scheme.percentBp))}\u00a0·\u00a0−\u00a0${rupees(line.discountPaise)}`}
         </p>
       )}
       {out && <p className="status status-danger mt-2 pl-[72px]">{t.issueOut}</p>}

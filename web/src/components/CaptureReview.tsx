@@ -30,6 +30,8 @@ type State = {
   unit: Unit | null;
   checked: boolean;
   substituted: boolean;
+  /** Corrected lines only: remember the shop's words for the chosen SKU. */
+  saveAlias: boolean;
   open: boolean;
 };
 
@@ -67,7 +69,7 @@ const en = {
   remove: "Remove",
   removed: "Removed",
   undo: "Undo",
-  needCheck: (n: number) => `${n} item${n === 1 ? "" : "s"} need your check`,
+  needCheck: (n: number) => (n === 1 ? "1 item needs your check" : `${n} items need your check`),
   allVerified: "All items verified",
   total: "Total incl. GST",
   confirm: "Confirm order",
@@ -76,6 +78,7 @@ const en = {
   done: "This message is already handled.",
   noReach: "Could not reach the server. Try again.",
   casesShort: (n: number) => `${n} case${n === 1 ? "" : "s"}`,
+  saveAlias: (words: string) => `Save “${words}” as this shop's word for it`,
 };
 type Strings = typeof en;
 const hi: Strings = {
@@ -119,13 +122,14 @@ const hi: Strings = {
   done: "यह मैसेज पहले ही निपट गया है।",
   noReach: "सर्वर तक नहीं पहुँचे। फिर कोशिश करें।",
   casesShort: (n) => `${n} पेटी`,
+  saveAlias: (words) => `“${words}” को इस दुकान का शब्द मानें`,
 };
 const STRINGS: Record<Lang, Strings> = { en, hi };
 
 function initial(l: Line, catalogue: Map<string, CatalogueItem>): State {
   // The unit comes only from the customer's words; "dabba" or no word leaves it unset.
   const unit: Unit | null = l.unit === "CASE" ? "CASE" : l.unit === "PIECE" ? "PIECE" : null;
-  const s: State = { removed: false, productId: l.productId, qty: l.qty, unit, checked: false, substituted: false, open: false };
+  const s: State = { removed: false, productId: l.productId, qty: l.qty, unit, checked: false, substituted: false, saveAlias: true, open: false };
   s.open = issueOf(l, s, catalogue) !== null;
   return s;
 }
@@ -186,6 +190,7 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
         unitConfirmed: st.unit !== null,
         checked: st.checked || issues.get(l.id) === null,
         substituted: st.substituted,
+        saveAlias: st.saveAlias,
       };
     });
     try {
@@ -232,6 +237,7 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
       <ol className="mt-2 divide-y divide-[var(--color-line)]">
         {capture.lines.map((l) => (
           <ReviewLine key={l.id} line={l} st={state[l.id]!} issue={issues.get(l.id) ?? null} flagged={serverProblems.has(l.id)}
+            canLearn={capture.source === "TEXT"}
             item={byId.get(state[l.id]!.productId ?? "")} s={s} lang={lang}
             onChange={(p) => update(l.id, p)} onChangeProduct={() => setSheetFor(l.id)} />
         ))}
@@ -271,8 +277,8 @@ export function CaptureReview({ lang, role, capture, catalogue }: Props) {
   );
 }
 
-function ReviewLine({ line, st, issue, flagged, item, s, lang, onChange, onChangeProduct }: {
-  line: Line; st: State; issue: Issue | null; flagged: boolean; item: CatalogueItem | undefined; s: Strings; lang: Lang;
+function ReviewLine({ line, st, issue, flagged, canLearn, item, s, lang, onChange, onChangeProduct }: {
+  line: Line; st: State; issue: Issue | null; flagged: boolean; canLearn: boolean; item: CatalogueItem | undefined; s: Strings; lang: Lang;
   onChange: (p: Partial<State>) => void; onChangeProduct: () => void;
 }) {
   const name = item ? `${lang === "hi" ? item.nameHi : item.name}` : null;
@@ -280,7 +286,7 @@ function ReviewLine({ line, st, issue, flagged, item, s, lang, onChange, onChang
   if (st.removed) {
     return (
       <li className="flex min-h-14 items-center justify-between gap-3 py-3 text-[var(--color-muted)]">
-        <span className="truncate text-sm line-through">{line.rawText}</span>
+        <span className="text-sm line-through">{line.rawText}</span>
         <button type="button" className="link shrink-0 text-sm" onClick={() => onChange({ removed: false, open: true })}>{s.undo}</button>
       </li>
     );
@@ -294,7 +300,7 @@ function ReviewLine({ line, st, issue, flagged, item, s, lang, onChange, onChang
         <button type="button" className="flex min-h-16 w-full items-center gap-4 py-3 text-left" onClick={() => onChange({ open: true })}>
           {item && <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={40} />}
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item?.packLabel}</span></span>
+            <span className="block font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item?.packLabel}</span></span>
             <span className="num block text-xs text-[var(--color-muted)]">{cases !== null && s.casesShort(cases)}{st.unit === "PIECE" && ` · ${st.qty} ${s.pieces.toLowerCase()}`}</span>
           </span>
           <span className="status status-ok">{s.verified}</span>
@@ -350,7 +356,14 @@ function ReviewLine({ line, st, issue, flagged, item, s, lang, onChange, onChang
         </div>
       )}
 
-      <div className="mt-4 flex min-h-11 items-center justify-between gap-3 pl-[72px]">
+      {changed && !st.substituted && canLearn && line.phrase && (
+        <label className="mt-3 flex min-h-12 cursor-pointer items-center gap-3 pl-[72px] text-sm">
+          <input type="checkbox" className="h-5 w-5 shrink-0 accent-[var(--color-accent)]" checked={st.saveAlias} onChange={(e) => onChange({ saveAlias: e.target.checked })} />
+          <span>{s.saveAlias(line.phrase)}</span>
+        </label>
+      )}
+
+      <div className="mt-4 flex min-h-12 items-center justify-between gap-3 pl-[72px]">
         {issue ? <span className={`status ${issue === "stock" || issue === "wholeCase" ? "status-danger" : "status-warn"}`}>{s.issue[issue]}</span> : <span className="status status-ok">{s.verified}</span>}
         <div className="flex items-center gap-4">
           {issue === "check" && <button type="button" className="link text-sm" onClick={() => onChange({ checked: true, open: false })}>{s.looksRight}</button>}

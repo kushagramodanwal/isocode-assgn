@@ -99,6 +99,8 @@ export type CaptureUnit = "CASE" | "PIECE" | "UNKNOWN";
 export type CaptureLineDto = {
   id: string;
   rawText: string;
+  /** The shop's product words as saved for an alias (rawText minus quantity, unit and filler). */
+  phrase: string;
   qty: number | null;
   unit: CaptureUnit;
   productId: string | null;
@@ -143,6 +145,8 @@ export type ReviewedLineDto = {
   unitConfirmed: boolean;
   checked: boolean;
   substituted: boolean;
+  /** For a corrected line: save the shop's words as an alias for the chosen SKU. Default true. */
+  saveAlias?: boolean;
 };
 
 export type ConfirmProblem = { lineId: string; problem: "no_product" | "no_qty" | "unit" | "unchecked" | "unknown_product" };

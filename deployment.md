@@ -84,7 +84,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
 npm test
 ```
 
-Runs 149 tests (no Gemini key needed: the AI adapter is tested with a mocked SDK). The 25 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
+Runs 151 tests (no Gemini key needed: the AI adapter is tested with a mocked SDK). The 25 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy

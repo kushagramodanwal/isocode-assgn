@@ -150,23 +150,30 @@ export function parseLine(rawLine: string): ExtractedLine {
   }
 
   // 2. number + count unit ("5 peti") or count unit + number ("peti 5") is the quantity.
-  for (let i = 0; i < tokens.length && !unitFound; i++) {
-    if (used[i]) continue;
-    const u = unitOf(tokens[i]!);
-    if (!u) continue;
-    const before = i > 0 && !used[i - 1] ? numberOf(tokens[i - 1]!) : null;
-    const after = i + 1 < tokens.length && !used[i + 1] ? numberOf(tokens[i + 1]!) : null;
-    if (before !== null) {
-      qty = before;
-      used[i - 1] = true;
-    } else if (after !== null) {
-      qty = after;
-      used[i + 1] = true;
+  //    A unit word next to a number wins over one standing alone: in "kala dabba wala 3 peti"
+  //    the order is "3 peti"; "dabba" only describes the product.
+  const takeUnit = (needNumber: boolean) => {
+    for (let i = 0; i < tokens.length && !unitFound; i++) {
+      if (used[i]) continue;
+      const u = unitOf(tokens[i]!);
+      if (!u) continue;
+      const before = i > 0 && !used[i - 1] ? numberOf(tokens[i - 1]!) : null;
+      const after = i + 1 < tokens.length && !used[i + 1] ? numberOf(tokens[i + 1]!) : null;
+      if (needNumber && before === null && after === null) continue;
+      if (before !== null) {
+        qty = before;
+        used[i - 1] = true;
+      } else if (after !== null) {
+        qty = after;
+        used[i + 1] = true;
+      }
+      unit = u;
+      unitFound = true;
+      used[i] = true;
     }
-    unit = u;
-    unitFound = true;
-    used[i] = true;
-  }
+  };
+  takeUnit(true);
+  takeUnit(false);
 
   // 3. No unit word: a lone small number is the quantity, but the unit stays UNKNOWN (asked).
   //    "do" only counts as 2 here if nothing else gave us a number.

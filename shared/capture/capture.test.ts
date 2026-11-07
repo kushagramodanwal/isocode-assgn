@@ -81,6 +81,12 @@ describe("units are asked, not guessed", () => {
     expect(l.unit).toBe(unit);
   });
 
+  it("a unit word next to the number wins over a descriptive one", () => {
+    const l = parseLine("kala dabba wala 3 peti");
+    expect([l.qty, l.unit]).toEqual([3, "CASE"]);
+    expect(parseLine("10 dabba noodles").unit).toBe("UNKNOWN"); // still asked when dabba is the only unit
+  });
+
   it("a missing quantity stays missing", () => {
     expect(parseLine("thoda haldi bhej dena").qty).toBeNull();
     expect(parseLine("aadha peti poha").qty).toBeNull();

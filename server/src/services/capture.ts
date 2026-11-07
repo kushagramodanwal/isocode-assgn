@@ -107,6 +107,8 @@ export type ReviewedLine = {
   checked: boolean;
   /** A different SKU was chosen because the matched one is out of stock: not a correction, not learned. */
   substituted: boolean;
+  /** The person chose not to save this correction as the shop's word. Default: save it. */
+  saveAlias?: boolean;
 };
 
 export type ConfirmProblem = { lineId: string; problem: "no_product" | "no_qty" | "unit" | "unchecked" | "unknown_product" };
@@ -151,7 +153,7 @@ export async function confirmCapture(input: { actorId: string; captureId: string
       items.push({ productId: r.productId, cases: r.cases });
       // Only learn from the shop's own typed words. A photo or voice transcript can be misread
       // ("surf" heard as "salt"); learning "salt → detergent" would poison the next real salt order.
-      if (changedProduct && !r.substituted && line.phrase && capture.source === "TEXT") corrections.push({ phrase: line.phrase, productId: r.productId });
+      if (changedProduct && !r.substituted && r.saveAlias !== false && line.phrase && capture.source === "TEXT") corrections.push({ phrase: line.phrase, productId: r.productId });
     }
   }
 

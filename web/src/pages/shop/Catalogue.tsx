@@ -47,6 +47,12 @@ export function Catalogue({ lang, name, availableCreditPaise, items, frequent, l
   }, [ordered, query]);
 
   const priced = useMemo(() => new Map(items.map((i) => [i.id, toPriced(i)])), [items]);
+  // "About ₹X" for the reorder preview: today's prices and schemes, only what is in stock.
+  const reorderQuote = useMemo(() => {
+    if (!lastOrder) return null;
+    const lines = lastOrder.lines.filter((l) => (priced.get(l.productId)?.stockCases ?? 0) > 0);
+    return priceCart(lines.map((l) => ({ productId: l.productId, cases: Math.min(l.cases, priced.get(l.productId)!.stockCases) })), priced, new Date());
+  }, [lastOrder, priced]);
   const cartEntries = Object.entries(cart.items).filter(([id]) => priced.has(id));
   const quote = useMemo(() => priceCart(cartEntries.map(([productId, cases]) => ({ productId, cases })), priced, new Date()), [cartEntries, priced]);
 
@@ -79,7 +85,7 @@ export function Catalogue({ lang, name, availableCreditPaise, items, frequent, l
             <RotateCcw size={20} strokeWidth={1.5} aria-hidden className="shrink-0" />
             <span className="flex flex-col gap-1">
               <span>{t.reorder}</span>
-              <span className="num text-xs font-normal opacity-80">{t.reorderSub(lastOrder.number, lastOrder.lines.length)}</span>
+              <span className="num text-xs font-normal opacity-80">{t.reorderSub(lastOrder.lines.length, rupeesShort(reorderQuote?.totals.totalPaise ?? 0))}</span>
             </span>
           </button>
         )}
@@ -106,7 +112,7 @@ export function Catalogue({ lang, name, availableCreditPaise, items, frequent, l
       {toast && <div role="status" className="fade-in fixed inset-x-5 bottom-40 z-30 mx-auto max-w-md rounded-xl bg-[var(--color-ink)] px-4 py-3 text-center text-sm text-white">{toast}</div>}
 
       {quote.lines.length > 0 && (
-        <Link to="/shop/cart" className="fade-in fixed inset-x-0 bottom-[76px] z-20 mx-auto flex h-14 max-w-[calc(36rem-40px)] items-center justify-between rounded-xl bg-[var(--color-accent)] px-5 text-white" style={{ width: "calc(100% - 40px)" }}>
+        <Link to="/shop/cart" className="fade-in fixed inset-x-0 bottom-[76px] z-20 mx-auto flex min-h-12 max-w-[calc(36rem-40px)] items-center justify-between gap-3 rounded-full bg-[var(--color-accent)] px-6 py-2 text-white" style={{ width: "calc(100% - 40px)" }}>
           <span className="num">{t.cartBar(quote.lines.length)} · <span className="font-semibold">{rupeesShort(quote.totals.totalPaise)}</span></span>
           <span className="font-semibold">{t.viewCart}</span>
         </Link>
@@ -119,27 +125,26 @@ function ProductRow({ item, lang, items }: { item: CatalogueItem; lang: Lang; it
   const t = dict[lang];
   const cart = useCart();
   const qty = cart.items[item.id] ?? 0;
-  const casePrice = item.unitPricePaise * item.unitsPerCase;
   const out = item.stockCases <= 0;
+  const low = !out && item.stockCases <= LOW_STOCK;
   const sibling = out ? items.find((o) => o.id !== item.id && o.name === item.name && o.stockCases > 0) : undefined;
   const name = lang === "hi" ? item.nameHi : item.name;
 
   return (
-    <li className="flex items-center gap-4 py-4">
-      <div className={`flex min-w-0 flex-1 items-center gap-4 ${out ? "opacity-40" : ""}`}>
-        <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
-        <div className="min-w-0">
-          <p className="font-semibold leading-snug">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
-          <p className="num text-xs text-[var(--color-muted)]">{t.caseOf(item.unitsPerCase)} · {rupeesCompact(casePrice)} {t.plusGstShort}</p>
-          {item.schemes.map((s) => <p key={s.id} className="text-xs text-[var(--color-accent)]">{schemeText(s, lang)}</p>)}
-          {out ? <p className="text-xs">{t.outOfStock}</p> : item.stockCases <= LOW_STOCK && <p className="status status-warn">{t.lowStock(item.stockCases)}</p>}
+    <li className="py-4">
+      <div className="flex items-center gap-4">
+        <div className={`flex min-w-0 flex-1 items-center gap-4 ${out ? "opacity-40" : ""}`}>
+          <PackArt kind={item.image} brand={item.brand} label={item.packLabel} size={56} />
+          <div className="min-w-0">
+            <p className="font-semibold">{name} <span className="font-normal text-[var(--color-muted)]">{item.packLabel}</span></p>
+            <p className="num text-xs text-[var(--color-muted)]">{t.pricePerPc(item.unitsPerCase, rupeesCompact(item.unitPricePaise))}</p>
+            {item.schemes.map((s) => <p key={s.id} className="text-xs text-[var(--color-accent)]">{schemeText(s, lang)}</p>)}
+            <p className={`status ${out ? "status-danger" : low ? "status-warn" : "status-ok"}`}>{out ? t.outOfStock : low ? t.stockLow(item.stockCases) : t.stockIn}</p>
+          </div>
         </div>
+        <Stepper value={out ? 0 : qty} max={out ? 0 : item.stockCases} onChange={(n) => cart.set(item.id, Math.min(n, item.stockCases))} label={`${name} ${item.packLabel}`} />
       </div>
-      {out ? (
-        sibling && <button className="link shrink-0 text-sm" onClick={() => cart.add(sibling.id, 1)}>{t.tryInstead(sibling.packLabel)}</button>
-      ) : (
-        <Stepper value={qty} max={item.stockCases} onChange={(n) => cart.set(item.id, Math.min(n, item.stockCases))} label={`${name} ${item.packLabel}`} />
-      )}
+      {sibling && <button className="link mt-2 ml-[72px] text-sm" onClick={() => cart.add(sibling.id, 1)}>{t.tryInstead(`${sibling.packLabel}`)}</button>}
     </li>
   );
 }

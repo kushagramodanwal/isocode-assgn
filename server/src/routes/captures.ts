@@ -95,6 +95,7 @@ const Reviewed = z.object({
     unitConfirmed: z.boolean(),
     checked: z.boolean(),
     substituted: z.boolean(),
+    saveAlias: z.boolean().optional(),
   })).max(40),
 });
 
