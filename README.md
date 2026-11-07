@@ -38,7 +38,7 @@ docs/     Technical Design Document
 
 ## Tests
 
-`npm test` runs 115 tests: the scheme engine, the message reader, the Gemini adapter (mocked), the Tally writer, order and capture services against Postgres (including a stock race), and the HTTP API's access control and request guards.
+`npm test` runs 126 tests: the scheme engine, the message reader, the Gemini adapter (mocked), the Tally writer, order and capture services against Postgres (including a stock race), and the HTTP API's access control and request guards.
 
 ## Documents
 

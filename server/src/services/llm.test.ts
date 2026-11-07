@@ -14,8 +14,9 @@ vi.mock("@google/genai", () => ({
     models = { generateContent: (req: never) => { stub.calls.push(req); return stub.impl(req); } };
   },
   Type: { OBJECT: "OBJECT", ARRAY: "ARRAY", STRING: "STRING", INTEGER: "INTEGER" },
+  ThinkingLevel: { MINIMAL: "MINIMAL", LOW: "LOW" },
 }));
-vi.mock("../env", () => ({ env: { GEMINI_API_KEY: "test", llmModel: "gemini-flash-latest" } }));
+vi.mock("../env", () => ({ env: { GEMINI_API_KEY: "test", llmModel: "gemini-3.5-flash-lite", LLM_TIMEOUT_MS: 15000 } }));
 
 const { extractWithLlm, reconcile } = await import("./llm");
 
@@ -33,7 +34,11 @@ describe("extractWithLlm (Gemini, mocked)", () => {
     ]);
     const lines = await extractWithLlm(BRIEF, ["Glucose biscuit 75 g"]);
     expect(lines.map((l) => [l.qty, l.unit])).toEqual([[5, "CASE"], [2, "CASE"], [1, "CASE"]]);
-    expect(lines[1]!.words).toEqual(["detergent", "powder"]);
+    // The shop's words stay the line's words; the model's catalogue words travel separately.
+    expect(lines[1]!.words).toEqual(["washing", "powder"]);
+    expect(lines[1]!.aiWords).toEqual(["detergent", "powder"]);
+    expect(lines[2]!.sizes).toEqual([{ value: 250, unit: null }]); // "250 wala": the retailer's own size
+    expect(lines[0]!.words).toEqual(["biscuit", "chhota"]);
     expect(lines[1]!.sizes).toEqual([{ value: 1000, unit: "g" }]);
     const call = stub.calls[0]!;
     expect(call.config.responseMimeType).toBe("application/json");
@@ -57,7 +62,38 @@ describe("extractWithLlm (Gemini, mocked)", () => {
   });
 });
 
+describe("transient errors", () => {
+  it("retries once on a 503 and succeeds", async () => {
+    let calls = 0;
+    stub.impl = async () => {
+      calls++;
+      if (calls === 1) throw Object.assign(new Error("high demand"), { status: 503 });
+      return reply([{ original: "3 peti haldi", quantity: 3, unit: "CASE", product: "haldi powder", pack_size: null }]);
+    };
+    expect((await extractWithLlm("3 peti haldi", []))[0]!.qty).toBe(3);
+    expect(calls).toBe(2);
+  });
+
+  it("does not retry a quota error (429): falls back to rules at once", async () => {
+    let calls = 0;
+    stub.impl = async () => { calls++; throw Object.assign(new Error("quota"), { status: 429 }); };
+    await expect(extractWithLlm("3 peti haldi", [])).rejects.toThrow("quota");
+    expect(calls).toBe(1);
+  });
+});
+
 describe("reconcile: the model never decides the unit, and disagreement means 'ask'", () => {
+  it("ignores a pack size the retailer never wrote (models copy it from the catalogue)", () => {
+    const l = reconcile({ original: "4) lal wala sabun 3 peti", quantity: 3, unit: "CASE", product: "Detergent bar 150 g", pack_size: "150 g" }, "4) lal wala sabun 3 peti");
+    expect(l.sizes).toEqual([]);
+    expect(l.aiWords).toEqual(["detergent", "bar"]);
+  });
+
+  it("keeps a model pack size whose number the retailer did write", () => {
+    const l = reconcile({ original: "biscuit bada 200 3 peti", quantity: 3, unit: "CASE", product: "glucose biscuit", pack_size: "200 g" }, "biscuit bada 200 3 peti");
+    expect(l.sizes.map((s) => s.value)).toContain(200);
+  });
+
   it("keeps UNKNOWN when the retailer wrote no unit word, whatever the model says", () => {
     const l = reconcile({ original: "biscuit 5", quantity: 5, unit: "CASE", product: "glucose biscuit", pack_size: null }, "biscuit 5");
     expect(l.unit).toBe("UNKNOWN");
@@ -79,7 +115,15 @@ describe("reconcile: the model never decides the unit, and disagreement means 'a
     expect(l.unit).toBe("CASE");
   });
 
-  it("falls back to the rule words if the model returns no product words", () => {
-    expect(reconcile({ original: "3 peti haldi", quantity: 3, unit: "CASE", product: "", pack_size: null }, "3 peti haldi").words).toEqual(["haldi"]);
+  it("keeps the retailer's own words as the line's words", () => {
+    const l = reconcile({ original: "2 peti lal wala sabun", quantity: 2, unit: "CASE", product: "bath soap", pack_size: null }, "2 peti lal wala sabun");
+    expect(l.words).toEqual(["lal", "sabun"]);
+    expect(l.aiWords).toEqual(["bath", "soap"]);
+  });
+
+  it("an empty model product leaves the rule words alone", () => {
+    const l = reconcile({ original: "3 peti haldi", quantity: 3, unit: "CASE", product: "", pack_size: null }, "3 peti haldi");
+    expect(l.words).toEqual(["haldi"]);
+    expect(l.aiWords).toEqual([]);
   });
 });

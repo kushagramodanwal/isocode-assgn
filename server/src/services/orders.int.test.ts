@@ -11,17 +11,19 @@ const { placeOrder, rejectOrder, releaseHold } = run ? await import("./orders") 
 const { createCapture, confirmCapture } = run ? await import("./capture") : ({} as typeof import("./capture"));
 
 const DAY = 86_400_000;
+// Random 10-digit numbers: deriving them from a uuid collided often enough to make tests flaky.
+const randomPhone = (first: string) => first + String(Math.floor(Math.random() * 1e9)).padStart(9, "0");
 
 async function fixture(opts: { limit?: number; outstanding?: number; biscuitStock?: number } = {}) {
   const tag = randomUUID().slice(0, 8);
   const brand = await db.brand.create({ data: { name: `Brand ${tag}` } });
   const retailer = await db.retailer.create({
     data: {
-      code: `T-${tag}`, shopName: `Test Shop ${tag}`, ownerName: "Test", area: "Test", route: "R", phone: `9${tag.replace(/\D/g, "0").padEnd(9, "0").slice(0, 9)}`,
+      code: `T-${tag}`, shopName: `Test Shop ${tag}`, ownerName: "Test", area: "Test", route: "R", phone: randomPhone("9"),
       creditLimitPaise: opts.limit ?? 50_000_00, outstandingPaise: opts.outstanding ?? 0, outstandingAsOf: new Date(Date.now() - DAY),
     },
   });
-  const user = await db.user.create({ data: { phone: `8${tag.replace(/\D/g, "1").padEnd(9, "1").slice(0, 9)}`, name: "Tester", role: "RETAILER", retailerId: retailer.id } });
+  const user = await db.user.create({ data: { phone: randomPhone("8"), name: "Tester", role: "RETAILER", retailerId: retailer.id } });
   const biscuit = await db.product.create({
     data: { code: `B-${tag}`, name: "Glucose biscuit", nameHi: "बिस्किट", brandId: brand.id, category: "food", packLabel: "75 g", unitsPerCase: 96, unitPricePaise: 810, gstRateBp: 500, stockCases: opts.biscuitStock ?? 340, image: "biscuit", keywords: ["biscuit", "chhota"] },
   });

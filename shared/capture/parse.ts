@@ -12,8 +12,10 @@ export type ExtractedLine = {
   raw: string; // the retailer's own words for this line, untouched
   qty: number | null;
   unit: Unit;
-  words: string[]; // product words left after removing qty, unit and filler
+  words: string[]; // the retailer's product words, after removing qty, unit and filler
   sizes: Size[];
+  /** Catalogue words suggested by the AI reader, kept apart so they can't inflate confidence or alias keys. */
+  aiWords?: string[];
 };
 
 const CASE_WORDS = new Set([
@@ -88,7 +90,9 @@ function explode(tokens: string[]): string[] {
 }
 
 export function parseLine(rawLine: string): ExtractedLine {
-  const tokens = explode(tokenise(normaliseText(rawLine)));
+  // List numbering ("4) ", "2. ", "- ") is not a quantity or a size, wherever the line came from.
+  const body = rawLine.replace(/^\s*(?:\d{1,2}\s*[).:-]|[-*•])\s+/, "");
+  const tokens = explode(tokenise(normaliseText(body)));
   const used = new Array(tokens.length).fill(false);
   const sizes: Size[] = [];
   let qty: number | null = null;

@@ -11,6 +11,7 @@ const schema = z.object({
   LLM_PROVIDER: z.enum(["gemini", "none"]).default("none"),
   GEMINI_API_KEY: z.string().optional(),
   LLM_MODEL: z.string().optional(),
+  LLM_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(15000),
   PORT: z.coerce.number().int().positive().default(4000),
   // Public origin(s) of the web app, comma separated. Mutating requests from other origins are refused.
   APP_ORIGIN: z.string().default("http://localhost:5173"),
@@ -27,7 +28,7 @@ export const env = {
   isProd: parsed.data.NODE_ENV === "production",
   demoMode: parsed.data.DEMO_MODE === "true",
   llmEnabled: parsed.data.LLM_PROVIDER === "gemini" && !!parsed.data.GEMINI_API_KEY,
-  // A stable alias on the free AI Studio tier; override with LLM_MODEL to pin a version.
-  llmModel: parsed.data.LLM_MODEL || "gemini-flash-latest",
+  // Measured: about 2.4 s per message and correct on the samples; larger "flash" models took 12–15 s+.
+  llmModel: parsed.data.LLM_MODEL || "gemini-3.5-flash-lite",
   allowedOrigins: parsed.data.APP_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean),
 };

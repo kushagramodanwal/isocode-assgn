@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, type Schema } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, Type, type Schema } from "@google/genai";
 import { z } from "zod";
 import { env } from "../env";
 import { parseLine, type ExtractedLine } from "../../../shared/capture/parse";
@@ -52,10 +52,26 @@ Rules:
 - If a quantity is not stated or is a fraction, use null.
 - Ignore greetings and requests like "bhaiya", "bhej dena".`;
 
-const TIMEOUT_MS = 15_000;
 let client: GoogleGenAI | null = null;
 
+/** Google's free tier returns 503 "high demand" now and then; one quick retry usually succeeds. */
+function isTransient(e: unknown): boolean {
+  const status = (e as { status?: number })?.status;
+  return status === 503 || status === 500;
+}
+
 export async function extractWithLlm(message: string, catalogueTerms: string[]): Promise<ExtractedLine[]> {
+  const deadline = Date.now() + env.LLM_TIMEOUT_MS;
+  try {
+    return await extractOnce(message, catalogueTerms, deadline);
+  } catch (e) {
+    if (!isTransient(e) || deadline - Date.now() < 3_000) throw e;
+    await new Promise((r) => setTimeout(r, 700));
+    return extractOnce(message, catalogueTerms, deadline);
+  }
+}
+
+async function extractOnce(message: string, catalogueTerms: string[], deadline: number): Promise<ExtractedLine[]> {
   client ??= new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
   const response = await client.models.generateContent({
     model: env.llmModel,
@@ -66,7 +82,9 @@ export async function extractWithLlm(message: string, catalogueTerms: string[]):
       responseSchema: GEMINI_SCHEMA,
       temperature: 0,
       maxOutputTokens: 4000,
-      abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+      // Splitting a short message needs little reasoning; default thinking took over 15 s.
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      abortSignal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
     },
   });
   const finish = response.candidates?.[0]?.finishReason;
@@ -88,20 +106,30 @@ export async function extractWithLlm(message: string, catalogueTerms: string[]):
  * Cross-check the model against the deterministic parser on the same words.
  * - Unit: only what the retailer actually wrote. If the rules see no unit word, it stays UNKNOWN.
  * - Quantity: if the two disagree, it becomes null so a person is asked.
+ * - Product words: the retailer's words stay the line's words; the model's go in aiWords.
+ * - Pack size: the retailer's own; a model-supplied size only if its number was actually written.
  * - Original words: must really appear in the message, otherwise we fall back to the model's text
  *   but the rules parse of it still drives unit and quantity.
  */
 export function reconcile(l: LlmLine, message: string): ExtractedLine {
   const raw = message.includes(l.original) ? l.original : l.original.trim();
   const rules = parseLine(raw);
-  const words = tokenise(normaliseText(l.product)).filter((t) => !/^\d/.test(t));
+  // Drop numbers and one-letter unit fragments ("g", "l") the model copies from catalogue names.
+  const words = tokenise(normaliseText(l.product)).filter((t) => !/^\d/.test(t) && t.length > 1);
+  // Models fill in a pack size from the catalogue even when the retailer wrote none ("lal wala
+  // sabun" came back as 150 g). Accept the model's size only if its number is in the retailer's words.
   const sizeLine = l.pack_size ? parseLine(`${l.pack_size} wala`) : null;
+  const rawNumbers = new Set(normaliseText(raw).match(/\d+(?:\.\d+)?/g) ?? []);
+  const modelSizeWritten = !!l.pack_size && (l.pack_size.match(/\d+(?:\.\d+)?/g) ?? []).some((n) => rawNumbers.has(n));
   const qty = rules.qty !== null && l.quantity !== null && rules.qty !== l.quantity ? null : (rules.qty ?? l.quantity);
   return {
     raw,
     qty: qty !== null && qty > 0 ? qty : null,
     unit: rules.unit,
-    words: words.length ? words : rules.words,
-    sizes: sizeLine?.sizes.length ? sizeLine.sizes : rules.sizes,
+    // The shop's own words stay the line's words (alias key, base confidence); the model's
+    // catalogue words travel separately and are weighed by matchWithAi.
+    words: rules.words,
+    aiWords: words,
+    sizes: rules.sizes.length ? rules.sizes : modelSizeWritten && sizeLine ? sizeLine.sizes : [],
   };
 }

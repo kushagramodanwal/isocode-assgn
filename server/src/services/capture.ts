@@ -2,7 +2,7 @@ import type { CaptureChannel, Prisma } from "@prisma/client";
 import { db } from "../db";
 import { env } from "../env";
 import { parseMessage, type ExtractedLine } from "../../../shared/capture/parse";
-import { matchLine, confidenceLevel, type CatalogueEntry } from "../../../shared/capture/match";
+import { matchWithAi, confidenceLevel, type CatalogueEntry } from "../../../shared/capture/match";
 import { catalogueFor, orderHistory } from "./catalogue";
 import { extractWithLlm } from "./llm";
 import { placeOrder, type PlaceOrderResult } from "./orders";
@@ -44,7 +44,7 @@ export async function createCapture(input: { actorId: string; retailerId: string
       parserNote: note,
       lines: {
         create: lines.slice(0, 40).map((l, position) => {
-          const m = matchLine(l.words, l.sizes, ctx);
+          const m = matchWithAi(l, ctx);
           return {
             position,
             rawText: l.raw.slice(0, 300),

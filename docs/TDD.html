@@ -67,7 +67,7 @@
 <div>
 <h3>Honest limits</h3>
 <ul>
-  <li><b>The demo runs the rule-based reader</b>, not an LLM, because no API key is configured. The Google Gemini extraction path (free AI Studio tier) is implemented, cross-checked and unit-tested with a mocked SDK, but has not been run against the live API in this build (§7.5).</li>
+  <li><b>The AI reader is Google Gemini on the free tier</b> (5 requests a minute). It is tested live on the sample messages only (§7.5); with no key, or when Google is busy, the app uses the rule-based reader.</li>
   <li>Photos and voice notes are not captured. Text only.</li>
   <li>Salesman offline mode is not built. The app is installable and survives a dropped signal (cart on the phone, offline page), but cannot place orders offline.</li>
   <li>SMS, WhatsApp and Tally are mocked as the brief says: OTP shown on screen, messages pasted by the desk, Tally gets a file.</li>
@@ -205,9 +205,18 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 <h3>7.4 Why rules first, LLM optional</h3>
 <p>Rules are free, instant, offline-capable, deterministic and explainable, and the brief's vocabulary is narrow (21 SKUs, a few dozen slang words). Their weakness is open-ended phrasing. An LLM is good at exactly that, but its confidence is not calibrated and it can't learn a shop's words. So the LLM is used only to <i>extract and normalise</i> lines (structured output against a schema), and the deterministic matcher still decides the SKU and the confidence.</p>
 
-<h3>7.5 The LLM path and its guardrails</h3>
-<p><code>server/src/services/llm.ts</code> uses Google's official <code>@google/genai</code> SDK with a Google AI Studio key (the free tier is enough for a pilot's volume). It asks for JSON constrained to a response schema, at temperature 0, with a 15 s timeout and the catalogue terms in the system instruction, then validates the reply again with zod. A blocked prompt, a safety or length stop, non-JSON or wrong-shaped output, a network error or a timeout all raise, and capture falls back to the rule reader. Its output is cross-checked against the rule reader on the same words: the <b>unit always comes from the retailer's actual words</b> (if the rules see no unit word, it stays unknown whatever the model says), and if the model's and the rules' quantities disagree, quantity becomes empty so a person is asked. Enabled with <code>LLM_PROVIDER=gemini</code> and <code>GEMINI_API_KEY</code>; the model defaults to the <code>gemini-flash-latest</code> alias and can be pinned with <code>LLM_MODEL</code>.</p>
-<div class="warn">Not verified against the live API: no key was available while building, so the demo uses the rule reader. 13 tests cover the adapter with a mocked SDK (good answer, every failure mode, and the unit/quantity cross-checks), but the first job with a key is to run it on the seeded messages and real ones. Note: on the free tier Google may use prompts to improve its products, so real customer messages should move to a paid key before launch.</div>
+<h3>7.5 The LLM path (Google Gemini) and its guardrails</h3>
+<p><code>server/src/services/llm.ts</code> uses Google's official <code>@google/genai</code> SDK with a Google AI Studio key. It asks <code>gemini-3.5-flash-lite</code> for JSON constrained to a response schema, at temperature 0 and low thinking, with the catalogue terms in the system instruction, then validates the reply again with zod. A blocked prompt, a safety or length stop, non-JSON or wrong-shaped output, a quota error or a timeout (15 s) all raise, and capture falls back to the rule reader; a transient 503 gets one quick retry first. Enabled with <code>LLM_PROVIDER=gemini</code> and <code>GEMINI_API_KEY</code>; <code>LLM_MODEL</code> pins another model.</p>
+<p><b>The model suggests; the retailer's words decide.</b> Running it against the samples showed three ways a model quietly overstates what the shop wrote, and each now has a rule:</p>
+<table>
+  <tr><th>What Gemini did</th><th>Risk</th><th>Rule now</th></tr>
+  <tr><td>Called "biscuit 5" a <i>glucose</i> biscuit</td><td>Ambiguous line jumped from "check, 63%" to "sure, 100%", so the desk would not be asked</td><td>Gemini's words are kept apart (<code>aiWords</code>). Confidence comes from the shop's own words; agreement adds at most 15 points; an AI-only pick is labelled "AI suggestion" and capped at medium. Aliases are keyed on the shop's words only.</td></tr>
+  <tr><td>Filled in "150 g" for "lal wala sabun" (no size written)</td><td>An invented pack size boosted the match to 78%</td><td>A model pack size is used only if its number appears in the shop's words.</td></tr>
+  <tr><td>Kept "4)" list numbering in its copy of the line</td><td>The 4 was read as a pack size</td><td>The line parser strips list numbering itself.</td></tr>
+  <tr><td>Said "CASE" for "10 dabba"</td><td>A guessed unit</td><td>The unit always comes from the shop's words; "dabba" stays a question.</td></tr>
+</table>
+<p><b>Measured</b> (free tier, 4 sample messages, 14 lines): same SKU, quantity and unit as the rule reader on every line; clear lines rise from 85% to 95%; "biscuit 5" stays <i>medium 73%</i> and "lal wala sabun" <i>low 36%</i>, so both still need a person; 1.7–4.6 s per message. Larger "flash" models took 12–15 s or more and were often overloaded (503), so the lite model is the default. <code>npm run ai:check</code> repeats this comparison.</p>
+<div class="warn">Free-tier limits: 5 requests per minute per model, occasional 503s, and Google may use free-tier prompts to improve its products. Fine for a demo; the pilot needs a paid key (about 600 messages a day), and the fallback to rules means a quota hit never stops the desk. On this small set Gemini adds confidence but no new correct answers: its value has to be shown on real, messier messages before it is worth the cost.</div>
 
 <h2>8. Security and privacy</h2>
 <ul>
@@ -244,13 +253,13 @@ web/      React SPA built by Vite: pages, components, cart state</pre>
 </ul>
 
 <h2>11. Tests</h2>
-<p><b>115 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
+<p><b>126 tests</b> (Vitest + supertest), run in CI against Postgres together with lint, typecheck and a production build:</p>
 <ul>
   <li><b>Scheme engine, 44:</b> the brief's three SKUs, every free-goods threshold and nudge, slab boundaries and unsorted slabs, competing schemes, validity edges, stock caps, invalid quantities, rounding, merging duplicates, credit maths.</li>
-  <li><b>Capture reader, 31:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered.</li>
+  <li><b>Capture reader, 37:</b> the brief's message end to end, units asked not guessed (Hinglish and Devanagari), sizes vs quantities, list numbering, splitting, misspellings, no-guess on unknown words, history tie-break, aliases, two alternatives always offered; AI words can lift confidence by at most 15 points, an AI-only pick is capped at medium, and a shop alias beats the AI.</li>
   <li><b>Tally export, 7:</b> XML escaping, India date, actual vs billed quantity, debit = credits balance, CGST/SGST split, CSV quoting and formula neutralising.</li>
   <li><b>Services against Postgres, 9:</b> server re-pricing and stock reservation, credit hold, two small orders can't both pass, out-of-stock refused, changed total refused, idempotency, <b>two concurrent orders for the last cases</b>, reject returns stock; capture can't be confirmed with unanswered units, by another shop, or twice; corrections are learned.</li>
-  <li><b>Gemini adapter (mocked), 13:</b> a good answer becomes lines; not-JSON, wrong shape, cut off, safety stop, blocked prompt, network error and timeout all fall back; the model never decides the unit; a quantity disagreement empties the field.</li>
+  <li><b>Gemini adapter (mocked), 18:</b> a good answer becomes lines; not-JSON, wrong shape, cut off, safety stop, blocked prompt, network error and timeout all fall back; one retry on 503 but none on a quota error; the model never decides the unit; a quantity disagreement empties the field; an invented pack size is ignored.</li>
   <li><b>HTTP API, 11:</b> no session → 401; retailer → desk endpoints 403; another shop's order → 404; deactivated user and tampered token locked out; desk can read any order; cross-origin write → 403; form-encoded write → 415; validation messages; bad quantities rejected; unknown phone gets the same answer as a known one.</li>
 </ul>
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "../../prisma/data/catalogue";
 import { parseLine, parseMessage, splitLines } from "./parse";
-import { matchLine, phraseKey, type MatchContext } from "./match";
+import { matchLine, matchWithAi, phraseKey, AI_ONLY_CAP, type MatchContext } from "./match";
 import { sizeMatches, tokenSimilarity } from "./text";
 
 const catalogue = PRODUCTS.map((p) => ({ id: p.code, name: p.name, nameHi: p.nameHi, brand: p.brand, packLabel: p.packLabel, keywords: p.keywords, category: p.category }));
@@ -122,6 +122,12 @@ describe("splitting a message", () => {
     ]);
   });
 
+  it("list numbering left on a line is neither a quantity nor a size", () => {
+    const l = parseLine("4) lal wala sabun 3 peti");
+    expect(l.qty).toBe(3);
+    expect(l.sizes).toEqual([]);
+  });
+
   it("keeps decimals inside sizes", () => {
     expect(splitLines("1.5 kg wala namak 2 peti")).toHaveLength(1);
   });
@@ -174,5 +180,40 @@ describe("matching when unsure", () => {
 
   it("reads Devanagari product names", () => {
     expect(capture("दो पेटी हल्दी")[0]!.match.productId).toBe("SKU-HL-100");
+  });
+});
+
+describe("AI-suggested words can help, but never hide doubt", () => {
+  it("agreement lifts confidence a little, not to certainty", () => {
+    const own = matchLine(["biscuit"], [], ctx());
+    const m = matchWithAi({ words: ["biscuit"], sizes: [], aiWords: ["glucose", "biscuit"] }, ctx());
+    expect(m.productId).toBe(own.productId);
+    expect(m.confidence).toBeLessThanOrEqual(own.confidence + 15);
+    expect(m.level).not.toBe("high"); // "biscuit 5" still asks a person
+  });
+
+  it("weak own words plus an agreeing AI stay low: 'lal wala sabun' still needs a person", () => {
+    const m = matchWithAi({ words: ["lal", "sabun"], sizes: [], aiWords: ["detergent", "bar"] }, ctx());
+    expect(m.productId).toBe("SKU-DB-150");
+    expect(m.level).toBe("low");
+  });
+
+  it("an AI-only suggestion (own words match nothing) is labelled and capped at medium", () => {
+    const m = matchWithAi({ words: ["kala", "dabba"], sizes: [], aiWords: ["neem", "bath", "soap"] }, ctx());
+    expect(m.productId).toBe("SKU-SP-100");
+    expect(m.matchedBy).toBe("ai");
+    expect(m.confidence).toBeLessThanOrEqual(AI_ONLY_CAP);
+    expect(m.level).toBe("medium");
+  });
+
+  it("a shop's learned alias beats the AI, keyed on the shop's own words", () => {
+    const m = matchWithAi({ words: ["lal", "sabun"], sizes: [], aiWords: ["detergent", "bar"] }, ctx({ aliases: new Map([["lal sabun", "SKU-SP-100"]]) }));
+    expect(m.productId).toBe("SKU-SP-100");
+    expect(m.matchedBy).toBe("alias");
+    expect(m.phrase).toBe("lal sabun");
+  });
+
+  it("no AI words: same as the plain matcher", () => {
+    expect(matchWithAi({ words: ["namak"], sizes: [] }, ctx())).toEqual(matchLine(["namak"], [], ctx()));
   });
 });

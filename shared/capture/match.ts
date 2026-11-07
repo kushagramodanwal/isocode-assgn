@@ -31,7 +31,7 @@ export type MatchResult = {
   productId: string | null;
   confidence: number; // 0..100
   level: ConfidenceLevel;
-  matchedBy: "alias" | "catalogue" | "history" | "none";
+  matchedBy: "alias" | "catalogue" | "history" | "ai" | "none";
   alternatives: Candidate[]; // the next two best SKUs
 };
 
@@ -151,4 +151,33 @@ function pickAlternatives(rest: Candidate[], topId: string, category: string | u
     .sort((a, b) => (ctx.history.get(b.id) ?? 0) - (ctx.history.get(a.id) ?? 0) || (a.id < b.id ? -1 : 1))
     .map((p) => ({ productId: p.id, score: 0 }));
   return [...picked, ...fillers].slice(0, 2);
+}
+
+/** How far agreement from the AI reader may lift confidence above the retailer's own words. */
+export const AI_AGREE_BOOST = 15;
+/** An AI-only suggestion is never shown as more than "medium", so a person always checks it. */
+export const AI_ONLY_CAP = 70;
+
+/**
+ * Match a line that also has AI-suggested words. The retailer's own words decide the alias key and
+ * the base confidence. The AI can:
+ *  - agree with the same SKU: confidence rises by at most AI_AGREE_BOOST;
+ *  - suggest a SKU the retailer's words don't support: shown as an AI suggestion, capped at medium;
+ *  - add nothing: the plain match stands.
+ * An alias learned from the retailer's own words always wins.
+ */
+export function matchWithAi(line: { words: string[]; sizes: Size[]; aiWords?: string[] }, ctx: MatchContext): MatchResult {
+  const own = matchLine(line.words, line.sizes, ctx);
+  if (!line.aiWords?.length || own.matchedBy === "alias") return own;
+  const ai = matchLine([...new Set([...line.aiWords, ...line.words])], line.sizes, { ...ctx, aliases: new Map() });
+  if (!ai.productId) return own;
+  if (ai.productId === own.productId) {
+    const confidence = Math.min(Math.max(own.confidence, Math.min(ai.confidence, own.confidence + AI_AGREE_BOOST)), 100);
+    return { ...own, confidence, level: confidenceLevel(confidence) };
+  }
+  const confidence = Math.min(ai.confidence, AI_ONLY_CAP);
+  const alternatives = [own.productId ? { productId: own.productId, score: own.confidence } : null, ...ai.alternatives]
+    .filter((c): c is Candidate => !!c && c.productId !== ai.productId)
+    .slice(0, 2);
+  return { phrase: own.phrase, productId: ai.productId, confidence, level: confidenceLevel(confidence), matchedBy: "ai", alternatives };
 }

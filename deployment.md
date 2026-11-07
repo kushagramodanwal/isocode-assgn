@@ -52,7 +52,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
    GEMINI_API_KEY=<your key>
    ```
 
-   Then compare Gemini with the rule-based reader on the four sample messages:
+   The free tier allows 5 requests a minute and is sometimes busy; whenever Gemini can't answer, the app falls back to the rule-based reader by itself. Compare Gemini with the rule-based reader on the four sample messages (takes about a minute; calls are paced):
 
    ```bash
    npm run ai:check
@@ -82,7 +82,7 @@ You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local insta
 npm test
 ```
 
-Runs 115 tests. The 20 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
+Runs 126 tests (no Gemini key needed: the AI adapter is tested with a mocked SDK). The 20 database and API tests use `TEST_DATABASE_URL`; they are skipped if it is not set. Apply migrations to the test database once first:
 
 ```bash
 DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
@@ -175,7 +175,8 @@ Names only. Never commit values. `.env.example` lists the same names.
 | `NODE_ENV` | no | `npm start` sets `production` |
 | `LLM_PROVIDER` | no | `gemini` to use Google Gemini for reading messages; `none` (default) uses the built-in rule-based reader |
 | `GEMINI_API_KEY` | only with `LLM_PROVIDER=gemini` | Google AI Studio API key (free tier works) |
-| `LLM_MODEL` | no | Override the Gemini model (default `gemini-flash-latest`) |
+| `LLM_MODEL` | no | Override the Gemini model (default `gemini-3.5-flash-lite`, measured at about 2–4 s per message) |
+| `LLM_TIMEOUT_MS` | no | How long to wait for Gemini before using the rule-based reader (default 15000) |
 | `TEST_DATABASE_URL` | tests only | Separate database for integration tests |
 
 ## Mocked outside systems
