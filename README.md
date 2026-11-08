@@ -2,6 +2,8 @@
 
 Retailer ordering app with AI order capture for an FMCG distributor in Jabalpur (fictional "Company A": 4 brands, 1,800 kirana shops).
 
+**Live app:** https://company-a-orders.onrender.com (demo logins in [deployment.md](deployment.md); the first visit after a quiet spell takes 30–60 s to wake)
+
 **Stack:** React + Vite · Node.js + Express · PostgreSQL (Prisma) · TypeScript throughout.
 
 ## What it does

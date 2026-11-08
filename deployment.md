@@ -9,6 +9,9 @@ web/      React + Vite single-page app
 prisma/   schema, migrations, fictional seed data
 ```
 
+**Live app:** https://company-a-orders.onrender.com  
+**Repository:** https://github.com/kushagramodanwal/isocode-assgn
+
 ## Run it locally
 
 You need **Node.js 20 or newer** and **PostgreSQL 15 or newer** (any local install, Docker, or a free cloud database).

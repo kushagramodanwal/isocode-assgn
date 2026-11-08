@@ -43,8 +43,8 @@
 <p style="color:var(--muted);margin:0">Technical Design Document · Retailer ordering app with AI order capture for an FMCG distributor in Jabalpur</p>
 
 <div class="meta">
-  <div><b>GitHub</b> <a href="__GITHUB_URL__">__GITHUB_URL__</a></div>
-  <div><b>Live app</b> __LIVE_URL__</div>
+  <div><b>GitHub</b> <a href="https://github.com/kushagramodanwal/isocode-assgn">https://github.com/kushagramodanwal/isocode-assgn</a></div>
+  <div><b>Live app</b> <a href="https://company-a-orders.onrender.com">https://company-a-orders.onrender.com</a> <span style="color:var(--muted)">(free hosting: the first visit after 15 idle minutes takes 30–60 s to wake)</span></div>
   <div><b>Brief</b> FMCG distributor's retailer ordering app with AI order capture (Software Engineering, core build)</div>
   <div><b>Demo logins</b> see <code>deployment.md</code>. OTP is mocked: the code is shown on screen in demo mode.</div>
   <div><b>Date</b> 7 November 2026</div>
@@ -71,7 +71,7 @@
   <li>Photos of lists and Hindi voice notes are read by Gemini and tested with generated files only, not yet with real handwriting or a real voice in a noisy shop (§7.6).</li>
   <li>Salesman offline mode is not built. The app is installable and survives a dropped signal (cart on the phone, offline page), but cannot place orders offline.</li>
   <li>SMS, WhatsApp and Tally are mocked as the brief says: OTP shown on screen, messages pasted by the desk, Tally gets a file.</li>
-  <li>Not deployed at time of writing unless a live URL is shown above.</li>
+  <li>Deployed on Render's free plan: the app sleeps after 15 idle minutes and the first visit then takes 30–60 s, and the free database expires after 30 days (see <code>deployment.md</code>).</li>
 </ul>
 </div>
 </div>
